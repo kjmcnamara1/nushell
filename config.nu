@@ -730,7 +730,7 @@ def la [path:path = .] {
 }
 # List directory with actual folder sizes sorted by type
 def ls [path:path = .] {
-    core-ls -d $path | sort-by type name -i
+    core-ls $path | sort-by type name -i
 }
 # Long list directory including hidden files with actual folder sizes sorted by type
 def ll [path:path = .] {
