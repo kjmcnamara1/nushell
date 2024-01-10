@@ -46,6 +46,10 @@ def create_right_prompt [] {
     ([$last_exit_code, (char space), $time_segment] | str join)
 }
 
+def create_prompt_indicator [mode:string] {
+
+}
+
 # Use nushell functions to define your right and left prompt
 # $env.PROMPT_COMMAND = {|| create_left_prompt }
 # FIXME: This default is not implemented in rust code as of 2023-09-08.
@@ -70,29 +74,31 @@ def create_right_prompt [] {
 # $env.TRANSIENT_PROMPT_MULTILINE_INDICATOR = {|| "" }
 # $env.TRANSIENT_PROMPT_COMMAND_RIGHT = {|| "" }
 
-$env.STARSHIP_SHELL = "nu"
-$env.STARSHIP_SESSION_KEY = (random chars -l 16)
-$env.PROMPT_INDICATOR = ""
-$env.PROMPT_INDICATOR_VI_INSERT = ""
-$env.PROMPT_INDICATOR_VI_NORMAL = ""
-$env.PROMPT_MULTILINE_INDICATOR = (starship prompt --continuation)
-$env.PROMPT_COMMAND = {||
-    (
-        starship prompt 
-        --cmd-duration $env.CMD_DURATION_MS 
-        $"--status=($env.LAST_EXIT_CODE)" 
-        --terminal-width (term size).columns
-    )
-}
-$env.PROMPT_COMMAND_RIGHT = {||
-    (
-        starship prompt 
-        --right
-        --cmd-duration $env.CMD_DURATION_MS 
-        $"--status=($env.LAST_EXIT_CODE)" 
-        --terminal-width (term size).columns
-    )
-}
+# $env.STARSHIP_SHELL = "nu"
+# $env.STARSHIP_SESSION_KEY = (random chars -l 16)
+# $env.PROMPT_INDICATOR = ""
+$env.PROMPT_INDICATOR_VI_INSERT =  $"(ansi white)╰─(ansi gb)  " #{|| " "}
+$env.PROMPT_INDICATOR_VI_NORMAL = $"(ansi white)╰─(ansi gb)  "
+# $env.PROMPT_MULTILINE_INDICATOR = (starship prompt --continuation)
+# $env.PROMPT_COMMAND = {||
+#     (
+#         starship prompt 
+#         --cmd-duration $env.CMD_DURATION_MS 
+#         $"--status=($env.LAST_EXIT_CODE)" 
+#         --terminal-width (term size).columns
+#     )
+# }
+# $env.PROMPT_COMMAND_RIGHT = {||
+#     (
+#         starship prompt 
+#         --right
+#         --cmd-duration $env.CMD_DURATION_MS 
+#         $"--status=($env.LAST_EXIT_CODE)" 
+#         --terminal-width (term size).columns
+#     )
+# }
+# $env.PROMPT_COMMAND = "╭─\n"
+# $env.PROMPT_COMMAND_RIGHT = "\n"
 
 # Specifies how environment variables are:
 # - converted from a string to a value on Nushell startup (from_string)
@@ -123,6 +129,6 @@ $env.NU_PLUGIN_DIRS = [
 
 # To add entries to PATH (on Windows you might use Path), you can use the following pattern:
 # $env.PATH = ($env.PATH | split row (char esep) | prepend '/some/path')
-$env.PATH = ($env.PATH | split row (char esep) | prepend $'($env.HOME)/.local/bin')
+$env.PATH = ($env.PATH | split row (char esep) | prepend $'($nu.home-path)/.local/bin')
 
 # oh-my-posh init nu --config ~/.config/nushell/atomic.omp.json --print | save ~/.config/nushell/.oh-my-posh.nu --force

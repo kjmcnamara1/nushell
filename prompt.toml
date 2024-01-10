@@ -1,0 +1,8 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+[username]
+disabled = false
+show_always = true
+format = '[$user]($style) @ '
+style_user = 'bold yellow'
+style_root = 'bold red'
