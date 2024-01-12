@@ -46,9 +46,6 @@ def create_right_prompt [] {
     ([$last_exit_code, (char space), $time_segment] | str join)
 }
 
-def create_prompt_indicator [mode:string] {
-
-}
 
 # Use nushell functions to define your right and left prompt
 # $env.PROMPT_COMMAND = {|| create_left_prompt }
