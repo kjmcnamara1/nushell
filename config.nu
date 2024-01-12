@@ -729,14 +729,19 @@ def la [path:path = .] {
     core-ls -a $path | sort-by type name -i | grid -cs '   '
 }
 # List directory with actual folder sizes sorted by type
-def ls [path:path = .] {
-    core-ls $path | sort-by type name -i
-}
+# def ls [path:path = .] {
+#     core-ls $path | sort-by type name -i
+# }
 # Long list directory including hidden files with actual folder sizes sorted by type
 def ll [path:path = .] {
-    core-ls -lad $path | sort-by type name -i #| table -t light
+    core-ls -la $path | sort-by type name -i #| table -t light
+}
+# Git status in table format
+def gits [] {
+    ^git status -s | from ssv -nam 1 | reject column4 | rename idx tree name new_name
 }
 
 # Starship config for nushell
-use ~/.cache/starship/init.nu
+# use ~/.cache/starship/init.nu
 # source ~/.config/nushell/.oh-my-posh.nu
+source ~/.config/nushell/prompt.nu
