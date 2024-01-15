@@ -139,6 +139,7 @@ export-env {
     
     def git-stats [] {
         let branch = ^git branch --show-current | str trim
+        let stash = git stash show -u | lines | get 1 | str trim | split row ' ' | first | into int
         let changes = ^git status -s | lines | parse -r '^(.)(.) (.+?)(?: -> (.*))?$' | rename idx tree name new_name
         let compare = $"(^git rev-list --left-right --count $'HEAD...origin/($branch)')" | split chars
         {
@@ -154,6 +155,10 @@ export-env {
                 symbol: $c.symbols.git.behind 
                 val: ($compare | last | into int) 
                 }
+            stashed: {
+                symbol: $c.symbols.git.stashed 
+                val: ($stash)
+                }
             staged: {
                 symbol: $c.symbols.git.staged 
                 val: ($changes | group-by idx | get M? | length)
@@ -161,6 +166,14 @@ export-env {
             modified: {
                 symbol: $c.symbols.git.modified 
                 val: ($changes | group-by tree | get M? | length)
+                }
+            renamed: {
+                symbol: $c.symbols.git.renamed 
+                val: ($changes | group-by idx | get R? | length)
+                }
+            deleted: {
+                symbol: $c.symbols.git.deleted 
+                val: ($changes | each { |x| $x.idx == 'D' or $x.tree == 'D' } | into int | math sum)
                 }
             untracked: {
                 symbol: $c.symbols.git.untracked 
@@ -335,18 +348,3 @@ export-env {
         })
     }
 }
-
-
-# $env.PROMPT_COMMAND = {|| create-prompt}
-# $env.PROMPT_COMMAND_RIGHT = '' # {|| create_right_prompt}
-# $env.PROMPT_INDICATOR_VI_INSERT = {|| indicator-prompt insert}
-# $env.PROMPT_INDICATOR_VI_NORMAL = {|| indicator-prompt normal}
-# $env.PROMPT_MULTILINE_INDICATOR = continuation-prompt
-# $env.config = ($env.config | upsert hooks.env_change.VIRTUAL_ENV_PROMPT {|config|
-#     let val = ($config | get -i hooks.env_change.VIRTUAL_ENV_PROMPT)
-#     if $val == null {
-#         [{|before, after| $env.PROMPT_COMMAND = {|| create-prompt}}]    
-#     } else {
-#         $val | append {|before, after| $env.PROMPT_COMMAND = {|| create-prompt}}
-#     }
-# })

@@ -49,7 +49,7 @@ ahead = '⇡'
 behind = '⇣'
 conflicted = "="
 untracked = "?"
-stashed = "\\$"
+stashed = '$'
 modified = "!"
 staged = "+"
 renamed = "»"
