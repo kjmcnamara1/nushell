@@ -139,7 +139,7 @@ export-env {
     
     def git-stats [] {
         let branch = ^git branch --show-current | str trim
-        let stash = git stash show -u | lines | get 1 | str trim | split row ' ' | first | into int
+        let stash = (^git stash show -u err> /dev/null) | lines | get 1? | default '0' | str trim | split row ' ' | first | into int
         let changes = ^git status -s | lines | parse -r '^(.)(.) (.+?)(?: -> (.*))?$' | rename idx tree name new_name
         let compare = $"(^git rev-list --left-right --count $'HEAD...origin/($branch)')" | split chars
         {
