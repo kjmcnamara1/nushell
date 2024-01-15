@@ -53,8 +53,11 @@ $env.NU_PLUGIN_DIRS = [
     ($nu.default-config-dir | path join 'plugins') # add <nushell-config-dir>/plugins
 ]
 
+let pathname = if ($nu.os-info.name | str contains windows) {'Path'} else {'PATH'}
 # To add entries to PATH (on Windows you might use Path), you can use the following pattern:
 # $env.PATH = ($env.PATH | split row (char esep) | prepend '/some/path')
-$env.PATH = ($env.PATH | split row (char esep) | prepend $'($nu.home-path)/.local/bin')
+export-env { load-env {
+    $pathname: ($env | get $pathname | split row (char esep) | prepend $'($nu.home-path)/.local/bin')
+}}
 
 # oh-my-posh init nu --config ~/.config/nushell/atomic.omp.json --print | save ~/.config/nushell/.oh-my-posh.nu --force
