@@ -173,7 +173,7 @@ export-env {
                 }
             deleted: {
                 symbol: $c.symbols.git.deleted 
-                val: ($changes | each { |x| $x.idx? == 'D' or $x.tree? == 'D' } | into int | math sum)
+                val: ($changes | default [] | each { |x| $x.idx? == 'D' or $x.tree? == 'D' } | into int | math sum)
                 }
             untracked: {
                 symbol: $c.symbols.git.untracked 
