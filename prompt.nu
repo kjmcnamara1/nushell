@@ -21,7 +21,7 @@ export-env {
     def prompt-fill [] {
         let left_prompt_length = (left-prompt | ansi strip | split row "\n" | each { || str length -g } | math max)
         let right_prompt_length = (right-prompt | ansi strip | str length -g)
-        let fill_length = (term size).columns - ($left_prompt_length + $right_prompt_length) - 2
+        let fill_length = (term size).columns - ($left_prompt_length + $right_prompt_length) - (if (is-ssh) {3} else {2})
         
         $"(ansi $c.palette.gray) ('' | fill -c ∙ -w $fill_length) (ansi reset)"
     }
@@ -139,7 +139,7 @@ export-env {
     
     def git-stats [] {
         let branch = ^git branch --show-current | str trim
-        let changes = ^git status -s | from ssv -nam 1 | select column1 column2 | rename idx tree
+        let changes = ^git status -s | lines | parse -r '^(.)(.) (.+?)(?: -> (.*))?$' | rename idx tree name new_name
         let compare = $"(^git rev-list --left-right --count $'HEAD...origin/($branch)')" | split chars
         {
             branch: {

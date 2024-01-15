@@ -741,7 +741,7 @@ def ll [path:path = .] {
 }
 # Git status in table format
 def gits [] {
-    ^git status -s | from ssv -nam 1 | reject column4 | rename idx tree name new_name
+    ^git status -s | lines | parse -r '^(.)(.) (.+?)(?: -> (.*))?$' | rename idx tree name new_name
 }
 
 # Starship config for nushell
