@@ -51,6 +51,7 @@ export-env {
             [_ true] => $c.palette.teal
             _ => $bg
         }
+        let fg = if $bg == $c.palette.red { $c.palette.white } | default $fg
         # if true {
         if ($admin or $ssh) {
             [
@@ -67,7 +68,7 @@ export-env {
     
     def hostname [] {
         [
-            (ansi green_dimmed)
+            # (ansi green_dimmed)
             (sys | get host.hostname)
             (if (is-ssh) {$'(ansi blue_dimmed) 🌐'})
         ] | str join
