@@ -188,8 +188,8 @@ $env.config = {
     bracketed_paste: true # enable bracketed paste, currently useless on windows
     edit_mode: vi # emacs, vi
     shell_integration: true # enables terminal shell integration. Off by default, as some terminals have issues with this.
-    # render_right_prompt_on_last_line: false # true or false to enable or disable right prompt to be rendered on last line of the prompt.
-    use_kitty_protocol: false # enables keyboard enhancement protocol implemented by kitty console, only if your terminal support this.
+    render_right_prompt_on_last_line: true # true or false to enable or disable right prompt to be rendered on last line of the prompt.
+    use_kitty_protocol: true # enables keyboard enhancement protocol implemented by kitty console, only if your terminal support this.
     highlight_resolved_externals: true # true enables highlighting of external commands in the repl resolved by which.
 
     hooks: {
@@ -216,29 +216,29 @@ $env.config = {
                 col_padding: 2
             }
             style: {
-                text: green
-                selected_text: green_reverse
-                description_text: yellow
+                text: '#4C566A'
+                selected_text: '#EBCB8B'
+                description_text: '#81A1C1'
             }
         }
         {
             name: history_menu
             only_buffer_difference: true
-            marker: "? "
+            marker: " "
             type: {
                 layout: list
                 page_size: 10
             }
             style: {
-                text: green
-                selected_text: green_reverse
-                description_text: yellow
+                text: '#4C566A'
+                selected_text: '#EBCB8B'
+                description_text: '#81A1C1'
             }
         }
         {
             name: help_menu
             only_buffer_difference: true
-            marker: "? "
+            marker: "󰋖 "
             type: {
                 layout: description
                 columns: 4
@@ -248,9 +248,9 @@ $env.config = {
                 description_rows: 10
             }
             style: {
-                text: green
-                selected_text: green_reverse
-                description_text: yellow
+                text: '#4C566A'
+                selected_text: '#EBCB8B'
+                description_text: '#81A1C1'
             }
         }
     ]
@@ -730,7 +730,10 @@ def la [path:path = .] {
 }
 # List directory with actual folder sizes sorted by type
 # def ls [path:path = .] {
-#     core-ls $path | sort-by type name -i
+# def --wrapped ls [...args] {
+    # core-ls $path | sort-by type name -i
+    # $rest | str join ' '
+#     (nu -c $"ls ($args | str join ' ')") | sort-by type name -i
 # }
 # Long list directory including hidden files with actual folder sizes sorted by type
 def ll [path:path = .] {
@@ -744,4 +747,4 @@ def gits [] {
 # Starship config for nushell
 # use ~/.cache/starship/init.nu
 # source ~/.config/nushell/.oh-my-posh.nu
-source ~/.config/nushell/prompt.nu
+use ~/.config/nushell/prompt.nu

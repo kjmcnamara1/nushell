@@ -2,51 +2,6 @@
 #
 # version = "0.88.1"
 
-def create_left_prompt [] {
-    let home =  $nu.home-path
-
-    # Perform tilde substitution on dir
-    # To determine if the prefix of the path matches the home dir, we split the current path into
-    # segments, and compare those with the segments of the home dir. In cases where the current dir
-    # is a parent of the home dir (e.g. `/home`, homedir is `/home/user`), this comparison will
-    # also evaluate to true. Inside the condition, we attempt to str replace `$home` with `~`.
-    # Inside the condition, either:
-    # 1. The home prefix will be replaced
-    # 2. The current dir is a parent of the home dir, so it will be uneffected by the str replace
-    let dir = (
-        if ($env.PWD | path split | zip ($home | path split) | all { $in.0 == $in.1 }) {
-            ($env.PWD | str replace $home "~")
-        } else {
-            $env.PWD
-        }
-    )
-
-    let path_color = (if (is-admin) { ansi red_bold } else { ansi green_bold })
-    let separator_color = (if (is-admin) { ansi light_red_bold } else { ansi light_green_bold })
-    let path_segment = $"($path_color)($dir)"
-
-    $path_segment | str replace --all (char path_sep) $"($separator_color)(char path_sep)($path_color)"
-}
-
-def create_right_prompt [] {
-    # create a right prompt in magenta with green separators and am/pm underlined
-    let time_segment = ([
-        (ansi reset)
-        (ansi magenta)
-        (date now | format date '%x %X %p') # try to respect user's locale
-    ] | str join | str replace --regex --all "([/:])" $"(ansi green)${1}(ansi magenta)" |
-        str replace --regex --all "([AP]M)" $"(ansi magenta_underline)${1}")
-
-    let last_exit_code = if ($env.LAST_EXIT_CODE != 0) {([
-        (ansi rb)
-        ($env.LAST_EXIT_CODE)
-    ] | str join)
-    } else { "" }
-
-    ([$last_exit_code, (char space), $time_segment] | str join)
-}
-
-
 # Use nushell functions to define your right and left prompt
 # $env.PROMPT_COMMAND = {|| create_left_prompt }
 # FIXME: This default is not implemented in rust code as of 2023-09-08.
@@ -70,32 +25,6 @@ def create_right_prompt [] {
 # $env.TRANSIENT_PROMPT_INDICATOR_VI_NORMAL = {|| "" }
 # $env.TRANSIENT_PROMPT_MULTILINE_INDICATOR = {|| "" }
 # $env.TRANSIENT_PROMPT_COMMAND_RIGHT = {|| "" }
-
-# $env.STARSHIP_SHELL = "nu"
-# $env.STARSHIP_SESSION_KEY = (random chars -l 16)
-# $env.PROMPT_INDICATOR = ""
-$env.PROMPT_INDICATOR_VI_INSERT =  $"(ansi white)╰─(ansi gb)  " #{|| " "}
-$env.PROMPT_INDICATOR_VI_NORMAL = $"(ansi white)╰─(ansi gb)  "
-# $env.PROMPT_MULTILINE_INDICATOR = (starship prompt --continuation)
-# $env.PROMPT_COMMAND = {||
-#     (
-#         starship prompt 
-#         --cmd-duration $env.CMD_DURATION_MS 
-#         $"--status=($env.LAST_EXIT_CODE)" 
-#         --terminal-width (term size).columns
-#     )
-# }
-# $env.PROMPT_COMMAND_RIGHT = {||
-#     (
-#         starship prompt 
-#         --right
-#         --cmd-duration $env.CMD_DURATION_MS 
-#         $"--status=($env.LAST_EXIT_CODE)" 
-#         --terminal-width (term size).columns
-#     )
-# }
-# $env.PROMPT_COMMAND = "╭─\n"
-# $env.PROMPT_COMMAND_RIGHT = "\n"
 
 # Specifies how environment variables are:
 # - converted from a string to a value on Nushell startup (from_string)

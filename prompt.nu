@@ -1,252 +1,344 @@
-export def prompt_config [] {
-    open ($nu.default-config-dir + '/prompt.toml')
-}
-
-export def repeat [char:string=' ' times:int=1] {
-    1..$times | each { || $char } | str join
-}
-
-export def prompt_fill [char:string=' '] {
-    let left_prompt_length = (left_prompt | ansi strip | split row "\n" | each { || str length -g } | math max)
-    let right_prompt_length = (right_prompt | ansi strip | str length -g)
-    let fill_length = (term size).columns - ($left_prompt_length + $right_prompt_length)
+export-env {
+    let c = (open $"($nu.default-config-dir)/prompt.toml")
     
-    repeat $char $fill_length
-    # for c in 1..$fill_length { print $char}
-    # $left_prompt_length
-}
-
-export def create_prompt [] {
-    (
-        $"(left_prompt)(prompt_fill ∙)(right_prompt)"
-        + $"(char newline)(ansi default_dimmed)╰─(ansi reset)"
-    )
-}
-
-export def left_prompt [] {
-    let cfg = prompt_config
-    let add_newline = if $cfg.add_newline { char newline } else { "" }
-    let prompt = (
-        $"(ansi default_dimmed)╭─(ansi reset)"
-        + $"(sep round left)(os)(group_sep right)"
-        + $"(username)(group_sep right)"
-        + $"(directory) "
-        )
-    # let prompt = $"(ansi default_dimmed)╭─(ansi reset)(os)\n(ansi default_dimmed)╰─(ansi reset)"
-    # let prompt = $cfg.format
-
-    $add_newline + $prompt
-}
-
-export def right_prompt [] {
-    $" (time)"
-}
-def continuation_prompt [] {
-    $"(ansi grey)∙∙∙(ansi reset)"
-}
-def indicator_prompt [mode:string] {
-    let characters = { insert:"  " normal:"  " }
-    # match $mode {
-    #     insert => { let character = "  " }
-    #     normal => { let character = "  " }
-    # }
-    let character = $characters | get $mode
-    let format = if ( $env.LAST_EXIT_CODE | into bool ) { ansi red_bold } else {  ansi green_bold }
-    ( ansi reset ) + $format + $character + ( ansi reset )
-}
-
-export def sep [
-    style:string 
-    direction:string 
-    fg:string=white
-    --bg?:string
-] {
-    let symbol = match [$style $direction] {
-        [round left] => ''
-        [round right] => ""
-        [angle left] => ''
-        [angle right] => ''
-        [slant left] => ''
-        [slant right] => ''
+    def create-prompt [] {
+        [
+            (char newline)
+            $"(left-prompt)(prompt-fill)(right-prompt)(char newline)"
+            $"(ansi default_dimmed)╰─(ansi reset)"
+        ] | str join
     }
-    # $"(ansi -e {fg:$fg (if ($bg != null) { $'bg:($bg)' })})($symbol)(ansi reset)"
-    $symbol
-}
-
-export def group_sep [direction:string] {
-    match $direction {
-        right => ''
-        left => ''
-    }
-}
-
-
-export def os [] {
-    let cfg = prompt_config
-    let hostname = (sys).host.name | str downcase | split words | first
-    let symbol = $cfg.os.symbols | get $hostname
-
-    $"(ansi -e {fg:black bg:white})($symbol)(ansi reset)"
-    # $"(ansi default)(ansi reset)(ansi -e {fg:black bg:white})($symbol)(ansi reset)(ansi default)(ansi reset)"
-}
-
-
-def username [] {
-    let cfg = prompt_config
-    let user = whoami
-    let style = if (is-admin) { 
-        $cfg.username.style_root 
-    } else { 
-        $cfg.username.style_user 
-    }
-
-    $"(ansi -e {fg:black bg:white}) ($user)@((sys).host.hostname) (ansi reset)"
-}
-
-export def is_readonly [path:path=.] {
-    # let dir_user = ^stat -c %U $path
     
-    if (sys | get host.long_os_version | split words | first) == Windows {
-        ls -lD ($path | path expand) | first | get readonly
-    } else {
-        let dir_info = ls -lD ($path | path expand) | select user group mode readonly | first
-        let user_match = $dir_info.user == (whoami)
-        let permissions = $dir_info.mode | split chars
+    def left-prompt [] {
+        [
+            $"(ansi default_dimmed)╭─(ansi reset)"
+            $"(os-group $c.palette.white $c.palette.gray)"
+            $"(user-group $c.palette.gray $c.palette.light)"
+            $"(directory-group $c.palette.white $c.palette.purple)"
+        ] | str join
+    }
+    
+    def prompt-fill [] {
+        let left_prompt_length = (left-prompt | ansi strip | split row "\n" | each { || str length -g } | math max)
+        let right_prompt_length = (right-prompt | ansi strip | str length -g)
+        let fill_length = (term size).columns - ($left_prompt_length + $right_prompt_length) - 2
         
-        $dir_info.readonly or ($user_match and $permissions.1 == -) or (not $user_match and $permissions.7 == -)
-    }
-}
-
-# Truncate path
-export def truncate_path [
-    path:path=. 
-    truncation_length:int=3 
-    truncation_symbol:string='...'
-] {
-    $path |path expand | path split | 
-    last $truncation_length | 
-    prepend $truncation_symbol |
-    path join
-    # str join (char path_sep)
-}
-
-export def directory [] {
-    let cfg = (prompt_config).directory
-    let home_symbol = $cfg.home_symbol? | default ~
-    let truncation_length = $cfg.truncation_length? | default 3
-    let truncation_symbol = $cfg.truncation_symbol? | default '...'
-    let truncate_to_repo = $cfg.truncate_to_repo? | default true
-    let ro_symbol = $cfg.read_only? | default ' '
-    
-    let path = if (is_git_path) and $truncate_to_repo {
-        let git_path = $"(get_git_path | path dirname)/" 
-        $" (pwd | str replace $git_path '')"
-    } else {
-        pwd | str replace $nu.home-path $home_symbol
+        $"(ansi $c.palette.gray) ('' | fill -c ∙ -w $fill_length) (ansi reset)"
     }
     
-
-    let path = $cfg.substitutions |
-        transpose key val |
-        reduce -f $path { |it, acc| 
-            $acc | str replace $it.key $it.val 
+    def right-prompt [] {
+        [
+            (python-group $c.palette.yellow $c.palette.blue)
+            (time-group $c.palette.black $c.palette.white)
+        ] | str join
     }
     
-    let path_length = $path | path split | length
-    let path = if ($path_length > $truncation_length) {
-        if (is_git_path) {
-            $path | path split | first | 
-            append (truncate_path $path ($truncation_length - 1) $truncation_symbol) |
-            path join
-        } else {
-            truncate_path $path $truncation_length $truncation_symbol
+    def os-group [fg bg] {
+        let hostname = (sys).host.name | str downcase | split words | first
+        let os = $c.symbols.os | get $hostname
+        [
+            $"(ansi -e {fg:$bg })(ansi reset)"
+            $"(ansi -e {fg:$fg bg:$bg}) ($os) (ansi reset)"
+            $"(ansi -e {fg:$bg })(ansi reset)"
+        ] | str join
+    }
+    
+    def user-group [fg bg] {
+        # if true {
+        if ((is-admin) or (is-ssh)) {
+            [
+                $"(ansi -e {fg:$bg})"
+                $"(ansi -e {fg:$fg bg:$bg}) "
+                (if (is-admin) {ansi red})
+                (whoami)
+                (ansi $fg)
+                @(hostname)
+                $" (ansi reset)(ansi -e {fg:$bg})(ansi reset)"
+            ] | str join
         }
-    } else { $path }
+    }
+    
+    def hostname [] {
+        [
+            (ansi green_dimmed)
+            (sys | get host.hostname)
+            (if (is-ssh) {$'(ansi blue_dimmed) 🌐'})
+        ] | str join
+    }
+    
+    def directory-group [fg bg] {
+        let is_gp = is-git-path
+        [
+            $"(ansi -e {fg:$bg})"
+            $"(ansi -e {fg:$fg bg:$bg}) "
+            $"(path-group) (ansi reset)"
+            (ansi $bg)
+            (if not $is_gp {''})
+            (git-group $c.palette.black)
+            # (if $is_gp {git-info $c.palette.black $bg})
+            # (git-info $c.palette.black $bg)
+        ] | str join
+    }
+    
+    def path-group [] {
+        # Git path or regular path
+        let is_gp = is-git-path
+        let path = if $is_gp {
+            let git_path = $"(get-git-path | path dirname)/" 
+            $"($c.symbols.git.symbol) (pwd | str replace $git_path '')"
+        } else {
+            pwd | str replace $nu.home-path $c.symbols.home
+        }
+        # Directory substitutions
+        let path = $c.directory.substitutions |
+            transpose key val |
+            reduce -f $path { |it, acc| 
+                $acc | str replace $it.key $it.val 
+        }
+        # Truncate path
+        let path_length = $path | path split | length
+        let path = if ($path_length > 3) {
+            if $is_gp {
+                $path | path split | first | 
+                append (truncate-path $path (3 - 1) $c.symbols.truncate) |
+                path join
+            } else {
+                truncate-path $path 3 $c.symbols.truncate
+            }
+        } else { $path }
+        # Read-only icon
+        let readonly = if (is-readonly) { $" (ansi $c.palette.red)($c.symbols.read_only)" }
+    
+        $"($path)($readonly)"
+    }
+    
+    def git-group [fg] {
+        if (is-git-path) {
+                let stats = git-stats
+                let flags = $stats | reject branch | 
+                    items { |key, val| if ($val.val > 0) {$"($val.symbol)($val.val)"} } | 
+                    compact | str join ' '
+                let up_to_date = ($flags | str length -g) > 0
+                let bg = if $up_to_date { $c.palette.yellow } else { $c.palette.green }
+            [
+                $"(ansi -e {bg:$bg}) "
+                $"(ansi $fg)"
+                ([$stats.branch.symbol $stats.branch.val $flags] | str join ' ')
+                $" (ansi reset)(ansi $bg)(ansi reset)"
+            ] | str join
+        }
+    }
+    
+    def git-stats [] {
+        let branch = ^git branch --show-current | str trim
+        let changes = ^git status -s | from ssv -nam 1 | select column1 column2 | rename idx tree
+        let compare = $"(^git rev-list --left-right --count $'HEAD...origin/($branch)')" | split chars
+        {
+            branch: {
+                symbol: $c.symbols.git.branch 
+                val:$branch 
+                }
+            ahead: {
+                symbol: $c.symbols.git.ahead 
+                val:($compare | first | into int) 
+                }
+            behind: {
+                symbol: $c.symbols.git.behind 
+                val: ($compare | last | into int) 
+                }
+            staged: {
+                symbol: $c.symbols.git.staged 
+                val: ($changes | group-by idx | get M? | length)
+                }
+            modified: {
+                symbol: $c.symbols.git.modified 
+                val: ($changes | group-by tree | get M? | length)
+                }
+            untracked: {
+                symbol: $c.symbols.git.untracked 
+                val: ($changes | group-by tree | get '?'? | length)
+                }
+            ignored: {
+                symbol: $c.symbols.git.ignored 
+                val: ($changes | group-by tree | get '!'? | length)
+                }
+        }
+    }
+            
+    
+    def python-group [fg bg] {
+        if ($env.VIRTUAL_ENV_PROMPT? != null) {
+            [
+                $"(ansi -e {fg:$bg})"
+                $"(ansi -e {fg:$fg bg:$bg})  ($env.VIRTUAL_ENV_PROMPT) "
+                $"(ansi reset)(ansi -e {fg:$bg})(ansi reset) "
+            ] | str join
+        }
+    }
+    
+    def cmd-duration-module [fg bg neighbor_bg=white] {
+        let min_time = 2000ms
+        let duration = ($env.CMD_DURATION_MS | into int) // 1000 | into duration -u sec
+        if ($duration > $min_time) {
+            [
+                $"(ansi -e {fg:$bg})(ansi reset)"
+                $"(ansi -e {fg:$fg bg:$bg}) ($duration)  "
+                # $"(ansi -e {fg:$neighbor_bg})(ansi reset)"
+            ] | str join
+        } 
+    }
+    
+    def time-group [fg bg] {
+        let cdm = cmd-duration-module $c.palette.black $c.palette.orange 
+        [
+            $"($cdm)(ansi -e {fg:$bg})"
+            (if $cdm == null {''} else {''})
+            # (if $cdm != null {$"($cdm)(ansi -e {fg:$bg})"} else {$"(ansi -e {fg:$bg})"})
+            # ($cdm | default $"(ansi -e {fg:$bg})")
+            $"(ansi -e {fg:$fg bg:$bg}) (date now | format date %X)  (ansi reset)"
+            $"(ansi -e {fg:$bg})"
+        ] | str join
+    }
+    
+    # def repeat [char:string=' ' times:int=1] {
+    #     1..$times | each { || $char } | str join
+    # }
+    
+    def continuation-prompt [] {
+        $"(ansi $c.palette.gray)∙∙∙(ansi reset)"
+    }
+    
+    def indicator-prompt [mode:string] {
+        let characters = { insert:"  " normal:"  " }
+        let character = $characters | get $mode
+        let format = if ( $env.LAST_EXIT_CODE | into bool ) {
+            ansi $c.palette.red
+        } else {
+            ansi $c.palette.green
+        }
+    
+        return $"(ansi reset)($format)($character)(ansi reset)"
+    }
+    
+    def transient-prompt [] {
+        let fg = $c.palette.white
+        let bg = $c.palette.blue
+        let ug = user-group $c.palette.gray $c.palette.white | str replace '' ''
+        [
+            $"(char newline)  "
+            ($ug)
+            (ansi $bg)
+            (if ($ug | is-empty) {''} else {''})
+            (ansi -e {fg:$fg bg:$bg})
+            $" (pwd | str replace $nu.home-path $c.symbols.home) "
+            $"(ansi reset)(ansi $bg)(ansi reset)"
+        ] | str join
+    }
 
-    let readonly = if (is_readonly) { $"(ansi red)($ro_symbol)" } | default ''
+    def transient-right-prompt [] {
+        let fg = $c.palette.black
+        let bg = $c.palette.lake
+        let duration = $env.CMD_DURATION_MS + 'ms' | into duration 
+        [
+        #     # (char newline)
+            (python-group $c.palette.yellow $c.palette.blue)
+        #     $"(ansi $bg)"
+        #     (ansi -e {fg:$fg bg:$bg})
+        #     $" ($duration)  "
+        #     $"(ansi reset)(ansi $bg)(ansi reset)"
+            (time-group $c.palette.black $c.palette.white)
+        ] | str join
+    }
+    
+    def is-ssh [] {
+            [
+                $env.SSH_TTY? 
+                $env.SSH_CONNECTION? 
+                $env.SSH_CLIENT?
+            ] | any {|| $in != null}
+    }
+    
+    def is-readonly [path:path=.] {
+        if (sys | get host.long_os_version | split words | first) == Windows {
+            ls -lD ($path | path expand) | first | get readonly
+        } else {
+            let dir_info = ls -lD ($path | path expand) | select user group mode readonly | first
+            let user_match = $dir_info.user == (whoami)
+            let permissions = $dir_info.mode | split chars
+            
+            $dir_info.readonly or ($user_match and $permissions.1 == -) or (not $user_match and $permissions.7 == -)
+        }
+    }
+    
+    def truncate-path [
+        path:path=. 
+        truncation_length:int=3 
+        truncation_symbol:string='...'
+    ] {
+        $path |path expand | path split | 
+        last $truncation_length | 
+        prepend $truncation_symbol |
+        path join
+        # str join (char path_sep)
+    }
+    
+    def is-git-path [path:path = .] {
+        (^git rev-parse --is-inside-work-tree err> /dev/null) != ''
+    }
+    
+    def get-git-path [path:path = .] {
+        if (is-git-path $path) {
+            ^git rev-parse --git-dir err> /dev/null | path expand | path dirname
+        }
+    }
 
-    let section_cap = if (is_git_path) {git_info} else {sep round right}
-    # $path
-    $"(ansi -e {fg:black bg:white}) ($path) ($readonly)(ansi reset)($section_cap)"
-}
-
-def is_git_path [path:path = .] {
-    # '.git' in (ls -a $path | get name)
-    (^git rev-parse --is-inside-work-tree err> /dev/null) != ''
-}
-
-def get_git_path [path:path = .] {
-    if (is_git_path $path) {
-        ^git rev-parse --git-dir err> /dev/null | path expand | path dirname
+    load-env {
+        CUSTOM_PROMPT: {|| create-prompt}
+        PROMPT_COMMAND: {|| create-prompt}
+        PROMPT_COMMAND_RIGHT: '' # {|| create_right_prompt}
+        PROMPT_INDICATOR_VI_INSERT: {|| indicator-prompt insert}
+        PROMPT_INDICATOR_VI_NORMAL: {|| indicator-prompt normal}
+        PROMPT_MULTILINE_INDICATOR: (continuation-prompt)
+        TRANSIENT_PROMPT_COMMAND: {|| transient-prompt}
+        TRANSIENT_PROMPT_COMMAND_RIGHT: {|| transient-right-prompt}
+        TRANSIENT_PROMPT_INDICATOR_VI_INSERT: " ❯ "
+        # TRANSIENT_PROMPT_INDICATOR_VI_NORMAL: " ❮ "
+        # config: ($env.config? | default {} | merge {
+        #     render_right_prompt_on_last_line: true
+        # })
+        # config: ($env.config | upsert hooks.pre_prompt [{|| create_prompt}])
+        config: ($env.config | upsert hooks.env_change.VIRTUAL_PREFIX {|cfg|
+            let val = ($cfg | get -i hooks.env_change.VIRTUAL_PREFIX)
+            # let reset_prompt = { |before, after| 
+            #         $env.PROMPT_COMMAND = if 'closure' in ($env.PROMPT_COMMAND | describe) {
+            #             {|| do $env.PROMPT_COMMAND | str replace $after ''}
+            #         } else {
+            #             {|| $env.PROMPT_COMMAND | str replace $after ''}
+            #         }
+            #     }
+            let reset_prompt = {|before, after| $env.PROMPT_COMMAND = $env.CUSTOM_PROMPT}
+            if $val == null {
+                # ['$env.PROMPT_COMMAND = {|| create-prompt}']
+                [$reset_prompt]
+            } else {
+                # $val | append {|before, after| $env.PROMPT_COMMAND = {|| create-prompt}}
+                $val | append $reset_prompt
+            }
+        })
     }
 }
 
-export def get_git_status [idx:string tree:string] {
-    match [idx tree] {
-        [? ?] => untracked
-        [! !] => ignored
-        [' ' ' '] => unmodified
-        [R ' '] => renamed
-        [R ' '] => stashed
-        [' ' M] => modified
-        [M ' '] => staged
-        [' ' D] => deleted
-        [R ' '] => typechanged
-        [R ' '] => ahead
-        [R ' '] => behind
-        _ => unknown
-    }
-}
-        
-def git_info [] {
-    let cfg = (prompt_config)
-    
-    let symbol = $cfg.git_branch.symbol? | default '󰘬'
-    let ahead_symbol = $cfg.git_status.ahead? | default '⇡'
-    let behind_symbol = $cfg.git_status.behind? | default '⇣'
-    let staged_symbol = $cfg.git_status.staged? | default '+'
-    let modified_symbol = $cfg.git_status.modified? | default '!'
-    let untracked_symbol = $cfg.git_status.untracked? | default '?'
-    let ignored_symbol = $cfg.git_status.ignored? | default ''
 
-    let branch = ^git branch --show-current | str trim
-    let git_stats = ^git status -s | from ssv -nam 1 | select column1 column2 | rename idx tree
-    let git_ahead_behind = $"(^git rev-list --left-right --count $'HEAD...origin/($branch)')" | split chars # | parse -r '(?<ahead>\d+)\s+(?<behind>\d+)' | first
-    
-    let ahead_count = $git_ahead_behind | first | into int
-    let behind_count = $git_ahead_behind | last | into int
-    let staged_count = $git_stats | group-by idx | get M? | length
-    let modified_count = $git_stats | group-by tree | get M? | length
-    let untracked_count = $git_stats | group-by tree | get '?'? | length
-    let ignored_count = $git_stats | group-by tree | get '!'? | length
-
-    let ahead = if ($ahead_count > 0) {$"($ahead_symbol)($ahead_count)"}
-    let behind = if ($behind_count > 0) {$"($behind_symbol)($behind_count)"}
-    let staged = if ($staged_count > 0) {$"($staged_symbol)($staged_count)"}
-    let modified = if ($modified_count > 0) {$"($modified_symbol)($modified_count)"}
-    let untracked = if ($untracked_count > 0) {$"($untracked_symbol)($untracked_count)"}
-    let ignored = if ($ignored_count > 0) {$"($ignored_symbol)($ignored_count)"}
-    
-    let all_counts = [$ahead_count $behind_count $staged_count $modified_count $untracked_count $ignored_count] | math sum
-    let all_flags = [$ahead $behind $staged $modified $untracked $ignored] | where { |x| $x != null } | str join ' ' | str trim
-
-    let bg = if ($all_counts > 0) {'yellow'} else {'green'}
-
-    $"(ansi -e {bg:$bg})(sep angle right) (ansi black)([$symbol $branch $all_flags] | str join ' ' | str trim) (ansi reset)(ansi $bg)(sep round right)(ansi reset)"
-    # $git_ahead_behind
-}
-
-export def time [] {
-    $"(sep round left)(ansi default_reverse) (date now | format date %X)  (ansi reset)(sep round right)"
-}
-
-export-env { load-env {
-    PROMPT_COMMAND: {|| create_prompt}
-    PROMPT_COMMAND_RIGHT: '' # {|| create_right_prompt}
-    PROMPT_INDICATOR_VI_INSERT: {|| indicator_prompt insert}
-    PROMPT_INDICATOR_VI_NORMAL: {|| indicator_prompt normal}
-    PROMPT_MULTILINE_INDICATOR: {|| continuation_prompt}
-    # config: ($env.config? | default {} | merge {
-    #     render_right_prompt_on_last_line: true
-    # })
-}}
+# $env.PROMPT_COMMAND = {|| create-prompt}
+# $env.PROMPT_COMMAND_RIGHT = '' # {|| create_right_prompt}
+# $env.PROMPT_INDICATOR_VI_INSERT = {|| indicator-prompt insert}
+# $env.PROMPT_INDICATOR_VI_NORMAL = {|| indicator-prompt normal}
+# $env.PROMPT_MULTILINE_INDICATOR = continuation-prompt
+# $env.config = ($env.config | upsert hooks.env_change.VIRTUAL_ENV_PROMPT {|config|
+#     let val = ($config | get -i hooks.env_change.VIRTUAL_ENV_PROMPT)
+#     if $val == null {
+#         [{|before, after| $env.PROMPT_COMMAND = {|| create-prompt}}]    
+#     } else {
+#         $val | append {|before, after| $env.PROMPT_COMMAND = {|| create-prompt}}
+#     }
+# })

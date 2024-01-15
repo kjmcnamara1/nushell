@@ -1,51 +1,60 @@
-"$schema" = 'https://starship.rs/config-schema.json'
-
-add_newline = true
-
-format = """
-[╭─](default_dimmed)\
-(os)
-[╰─](default_dimmed)\
-"""
-
 [palette]
-dark1 = '#2E3440'
-dark2 = '#3B4252'
-dark3 = '#434C5E'
-dark4 = '#4C566A'
-light1 = '#D8DEE9'
-light2 = '#E5E9F0'
-light3 = '#ECEFF4'
-theme1 = '#8FBCBB'
-theme2 = '#88C0D0'
-theme3 = '#81A1C1'
-theme4 = '#5E81AC'
-accent1 = '#BF616A'
-accent2 = '#D08770'
-accent3 = '#EBCB8B'
-accent4 = '#A3BE8C'
-accent5 = '#B48EAD'
+black = '#2E3440'
+gray = '#4C566A'
+light = '#D8DEE9'
+white = '#ECEFF4'
+teal = '#8FBCBB'
+lake = '#88C0D0'
+frost = '#81A1C1'
+blue = '#5E81AC'
+red = '#BF616A'
+orange = '#D08770'
+yellow = '#EBCB8B'
+green = '#A3BE8C'
+purple = '#B48EAD'
 
-[os.symbols]
-windows = "󰍲 "
-ubuntu = "󰕈 "
-suse = " "
-raspbian = "󰐿 "
-mint = "󰣭 "
-macos = "󰀵 "
-manjaro = " "
-linux = "󰌽 "
-gentoo = "󰣨 "
-fedora = "󰣛 "
-alpine = " "
-amazon = " "
-android = " "
-arch = "󰣇 "
-artix = "󰣇 "
-centos = " "
-debian = "󰣚 "
-redhat = "󱄛 "
-redhatenterprise = "󱄛 "
+[symbols]
+home = " "
+read_only = ""
+truncate = "…"
+python = ""
+duration = ""
+time = ""
+
+[symbols.os]
+windows = "󰍲"
+ubuntu = "󰕈"
+suse = ""
+raspbian = "󰐿"
+mint = "󰣭"
+macos = "󰀵"
+manjaro = ""
+linux = "󰌽"
+gentoo = "󰣨"
+fedora = "󰣛"
+alpine = ""
+amazon = ""
+android = ""
+arch = "󰣇"
+artix = "󰣇"
+centos = ""
+debian = "󰣚"
+redhat = "󱄛"
+redhatenterprise = "󱄛"
+
+[symbols.git]
+symbol = ""
+branch = "󰘬"
+ahead = '⇡'
+behind = '⇣'
+conflicted = "="
+untracked = "?"
+stashed = "\\$"
+modified = "!"
+staged = "+"
+renamed = "»"
+deleted = "✘"
+ignored = ''
 
 [username]
 disabled = false
@@ -62,7 +71,7 @@ format = "[@($ssh_symbol )$hostname ]($style)"
 [directory]
 format = "[$path ]($style)[$read_only]($read_only_style)"
 style = "bg:theme4 fg:light3"
-home_symbol = ""
+home_symbol = " "
 truncation_symbol = "…"
 truncate_to_repo = true
 read_only = ""
@@ -101,6 +110,8 @@ format = '([](fg:theme4)[$symbol $virtualenv]($style)[](fg:theme4)) '
 [cmd_duration]
 format = "[ $duration  ]($style)"
 style = "bg:accent5 fg:dark2 bold"
+min_time = 2000
+
 
 [time]
 disabled = false
