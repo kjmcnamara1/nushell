@@ -44,12 +44,19 @@ export-env {
     }
     
     def user-group [fg bg] {
+        let admin = is-admin
+        let ssh = is-ssh
+        let bg = match [$admin $ssh] {
+            [true false] => $c.palette.red
+            [_ true] => $c.palette.teal
+            _ => $bg
+        }
         # if true {
-        if ((is-admin) or (is-ssh)) {
+        if ($admin or $ssh) {
             [
                 $"(ansi -e {fg:$bg})"
                 $"(ansi -e {fg:$fg bg:$bg}) "
-                (if (is-admin) {ansi red})
+                (if ($admin and $ssh) {ansi red})
                 (whoami)
                 (ansi $fg)
                 @(hostname)
@@ -90,7 +97,7 @@ export-env {
             pwd | str replace $nu.home-path $c.symbols.home
         }
         # Directory substitutions
-        let path = $c.directory.substitutions |
+        let path = $c.symbols.directories |
             transpose key val |
             reduce -f $path { |it, acc| 
                 $acc | str replace $it.key $it.val 
