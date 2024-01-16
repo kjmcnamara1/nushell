@@ -1,5 +1,5 @@
 export-env {
-    let c = (open $"($nu.default-config-dir)/prompt.toml")
+    let c = $nu.default-config-dir | path join prompt.toml | open
     
     def create-prompt [] {
         [
@@ -92,7 +92,7 @@ export-env {
         # Git path or regular path
         let is_gp = is-git-path
         let path = if $is_gp {
-            let git_path = $"(get-git-path | path dirname)/" 
+            let git_path = $"(get-git-path | path dirname)(char path_sep)" 
             $"($c.symbols.git.symbol) (pwd | str replace $git_path '')"
         } else {
             pwd | str replace $nu.home-path $c.symbols.home
@@ -304,13 +304,11 @@ export-env {
     }
     
     def is-git-path [] {
-        # (^git rev-parse --is-inside-work-tree err> /dev/null) != ''
         do { ^git rev-parse --is-inside-work-tree } | complete | get stdout | is-empty | not $in
     }
     
     def get-git-path [] {
         if (is-git-path) {
-            # ^git rev-parse --git-dir err> /dev/null | path expand | path dirname
             do { ^git rev-parse --git-dir } | complete | get stdout | path expand | path dirname
         }
     }
