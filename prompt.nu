@@ -303,13 +303,15 @@ export-env {
         # str join (char path_sep)
     }
     
-    def is-git-path [path:path = .] {
-        (^git rev-parse --is-inside-work-tree err> /dev/null) != ''
+    def is-git-path [] {
+        # (^git rev-parse --is-inside-work-tree err> /dev/null) != ''
+        do { ^git rev-parse --is-inside-work-tree } | complete | get stdout | is-empty | not $in
     }
     
-    def get-git-path [path:path = .] {
-        if (is-git-path $path) {
-            ^git rev-parse --git-dir err> /dev/null | path expand | path dirname
+    def get-git-path [] {
+        if (is-git-path) {
+            # ^git rev-parse --git-dir err> /dev/null | path expand | path dirname
+            do { ^git rev-parse --git-dir } | complete | get stdout | path expand | path dirname
         }
     }
 
