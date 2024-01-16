@@ -747,4 +747,4 @@ def gits [] {
 # Starship config for nushell
 # use ~/.cache/starship/init.nu
 # source ~/.config/nushell/.oh-my-posh.nu
-use ./prompt.nu
+use prompt.nu

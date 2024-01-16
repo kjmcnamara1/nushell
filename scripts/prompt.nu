@@ -1,5 +1,5 @@
 export-env {
-    let c = $nu.default-config-dir | path join prompt.toml | open
+    let c = $nu.default-config-dir | path join scripts/prompt.toml | open
     
     def create-prompt [] {
         [
