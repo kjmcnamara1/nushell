@@ -21,7 +21,12 @@ export-env {
     def prompt-fill [] {
         let left_prompt_length = (left-prompt | ansi strip | split row "\n" | each { || str length -g } | math max)
         let right_prompt_length = (right-prompt | ansi strip | str length -g)
-        let fill_length = (term size).columns - ($left_prompt_length + $right_prompt_length) - (if (is-ssh) {3} else {2})
+        let fill_length = (
+            (term size).columns - 
+            ($left_prompt_length + $right_prompt_length) - 
+            (if (is-ssh) {3} else {2}) - 
+            (if $nu.os-info.name == 'windows' {2} else {0})
+        )
         
         $"(ansi $c.palette.gray) ('' | fill -c ∙ -w $fill_length) (ansi reset)"
     }
@@ -280,7 +285,7 @@ export-env {
     }
     
     def is-readonly [path:path=.] {
-        if (sys | get host.long_os_version | split words | first) == Windows {
+        if $nu.os-info.name == 'windows' {
             ls -lD ($path | path expand) | first | get readonly
         } else {
             let dir_info = ls -lD ($path | path expand) | select user group mode readonly | first
