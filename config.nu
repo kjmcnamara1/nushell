@@ -718,7 +718,9 @@ $env.config = {
 # Custom Commands & Aliases
 
 alias core-ls = ls
-alias py = python3
+if $nu.os-info.name != 'windows' {
+    alias py = python3
+}
 
 # List directory in a grid sorted by type
 def l [path:path = .] {
