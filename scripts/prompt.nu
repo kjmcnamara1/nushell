@@ -305,7 +305,6 @@ export-env {
         last $truncation_length | 
         prepend $truncation_symbol |
         path join
-        # str join (char path_sep)
     }
     
     def is-git-path [] {
@@ -320,37 +319,13 @@ export-env {
 
     load-env {
         VIRTUAL_ENV_DISABLE_PROMPT: true
-        # CUSTOM_PROMPT: {|| create-prompt}
         PROMPT_COMMAND: {|| create-prompt}
         PROMPT_COMMAND_RIGHT: '' # {|| create_right_prompt}
         PROMPT_INDICATOR_VI_INSERT: {|| indicator-prompt insert}
         PROMPT_INDICATOR_VI_NORMAL: {|| indicator-prompt normal}
         PROMPT_MULTILINE_INDICATOR: (continuation-prompt)
-        TRANSIENT_PROMPT_COMMAND: {|| transient-prompt}
-        TRANSIENT_PROMPT_COMMAND_RIGHT: {|| transient-right-prompt}
-        TRANSIENT_PROMPT_INDICATOR_VI_INSERT: " ❯ "
-        # TRANSIENT_PROMPT_INDICATOR_VI_NORMAL: " ❮ "
-        # config: ($env.config? | default {} | merge {
-        #     render_right_prompt_on_last_line: true
-        # })
-        # config: ($env.config | upsert hooks.pre_prompt [{|| create_prompt}])
-        # config: ($env.config | upsert hooks.env_change.VIRTUAL_PREFIX {|cfg|
-        #     let val = ($cfg | get -i hooks.env_change.VIRTUAL_PREFIX)
-        #     # let reset_prompt = { |before, after| 
-        #     #         $env.PROMPT_COMMAND = if 'closure' in ($env.PROMPT_COMMAND | describe) {
-        #     #             {|| do $env.PROMPT_COMMAND | str replace $after ''}
-        #     #         } else {
-        #     #             {|| $env.PROMPT_COMMAND | str replace $after ''}
-        #     #         }
-        #     #     }
-        #     let reset_prompt = {|before, after| $env.PROMPT_COMMAND = $env.CUSTOM_PROMPT}
-        #     if $val == null {
-        #         # ['$env.PROMPT_COMMAND = {|| create-prompt}']
-        #         [$reset_prompt]
-        #     } else {
-        #         # $val | append {|before, after| $env.PROMPT_COMMAND = {|| create-prompt}}
-        #         $val | append $reset_prompt
-        #     }
-        # })
+        # TRANSIENT_PROMPT_COMMAND: {|| transient-prompt}
+        # TRANSIENT_PROMPT_COMMAND_RIGHT: {|| transient-right-prompt}
+        # TRANSIENT_PROMPT_INDICATOR_VI_INSERT: " ❯ "
     }
 }

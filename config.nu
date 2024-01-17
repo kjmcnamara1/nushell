@@ -722,34 +722,35 @@ alias py = if $nu.os-info.name != 'windows' {python3 } else {py}
 
 # List directory in a grid sorted by type
 def l [path:path = .] {
-    core-ls $path | sort-by type name -i | grid -cs '   '
+    core-ls -s $path | sort-by type name -i | grid -cs '   '
 }
 # List directory in a grid including hidden files and sorted by type
 def la [path:path = .] {
-    core-ls -a $path | sort-by type name -i | grid -cs '   '
+    core-ls -sa $path | sort-by type name -i | grid -cs '   '
 }
 # List directory with actual folder sizes sorted by type
-# def ls [path:path = .] {
+# def ls [
+#     pattern:path=.
+#     ] {
 # def --wrapped ls [...args] {
-    # core-ls $path | sort-by type name -i
+    # core-ls $pattern | sort-by type name -i
     # $rest | str join ' '
-#     (nu -c $"ls ($args | str join ' ')") | sort-by type name -i
+    # (nu -c $"ls ($args | str join ' ')") | sort-by type name -i
+    # core-ls ($args | str join ' ')
 # }
 # Long list directory including hidden files with actual folder sizes sorted by type
 def ll [path:path = .] {
-    core-ls -la $path | sort-by type name -i #| table -t light
+    core-ls -lsa $path | sort-by type name -i #| table -t light
 }
 # Git status in table format
 def gits [] {
     ^git status -s | lines | parse -r '^(.)(.) (.+?)(?: -> (.*))?$' | rename idx tree name new_name
 }
-# if $nu.os-info.name == 'windows' {
-    def 'poetry shell' [] {
-        let env_path = ^poetry env info | parse -r 'Virtualenv[\s\S]*?Executable:\s*(.*)' | get capture0.0 
-        let activate_script = $env_path | path split | drop | path join activate.nu
-        nu -e $'overlay use ($activate_script)'
-    }
-# }
+def 'poetry shell' [] {
+    let env_path = ^poetry env info | parse -r 'Virtualenv[\s\S]*?Executable:\s*(.*)' | get capture0.0 
+    let activate_script = $env_path | path split | drop | path join activate.nu
+    nu -e $'overlay use ($activate_script)'
+}
 
 # Starship config for nushell
 # use ~/.cache/starship/init.nu
