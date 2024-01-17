@@ -718,9 +718,7 @@ $env.config = {
 # Custom Commands & Aliases
 
 alias core-ls = ls
-if $nu.os-info.name != 'windows' {
-    alias py = python3
-}
+alias py = if $nu.os-info.name != 'windows' {python3 } else {py}
 
 # List directory in a grid sorted by type
 def l [path:path = .] {
@@ -745,6 +743,13 @@ def ll [path:path = .] {
 def gits [] {
     ^git status -s | lines | parse -r '^(.)(.) (.+?)(?: -> (.*))?$' | rename idx tree name new_name
 }
+# if $nu.os-info.name == 'windows' {
+    def 'poetry shell' [] {
+        let env_path = ^poetry env info | parse -r 'Virtualenv[\s\S]*?Executable:\s*(.*)' | get capture0.0 
+        let activate_script = $env_path | path split | drop | path join activate.nu
+        nu -e $'overlay use ($activate_script)'
+    }
+# }
 
 # Starship config for nushell
 # use ~/.cache/starship/init.nu
