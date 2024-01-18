@@ -89,12 +89,6 @@ let nord_theme = {
     cursor: "#e5e9f0"
 }
 
-
-# External completer example
-# let carapace_completer = {|spans|
-#     carapace $spans.0 nushell $spans | from json
-# }
-
 # The default config record. This is where much of your global configuration is setup.
 $env.config = {
     show_banner: false # true or false to enable or disable the welcome banner at startup
@@ -211,9 +205,10 @@ $env.config = {
             marker: "| "
             type: {
                 layout: columnar
-                columns: 4
-                col_width: 20     # Optional value. If missing all the screen width is used to calculate column width
-                col_padding: 2
+                page_size: 10
+                # columns: 4
+                # col_width: 20     # Optional value. If missing all the screen width is used to calculate column width
+                # col_padding: 2
             }
             style: {
                 text: '#4C566A'
@@ -223,7 +218,7 @@ $env.config = {
         }
         {
             name: history_menu
-            only_buffer_difference: true
+            only_buffer_difference: false
             marker: " "
             type: {
                 layout: list
@@ -237,7 +232,7 @@ $env.config = {
         }
         {
             name: help_menu
-            only_buffer_difference: true
+            only_buffer_difference: false
             marker: "󰋖 "
             type: {
                 layout: description
@@ -728,16 +723,6 @@ def l [path:path = .] {
 def la [path:path = .] {
     core-ls -sa $path | sort-by type name -i | grid -cs '   '
 }
-# List directory with actual folder sizes sorted by type
-# def ls [
-#     pattern:path=.
-#     ] {
-# def --wrapped ls [...args] {
-    # core-ls $pattern | sort-by type name -i
-    # $rest | str join ' '
-    # (nu -c $"ls ($args | str join ' ')") | sort-by type name -i
-    # core-ls ($args | str join ' ')
-# }
 # Long list directory including hidden files with actual folder sizes sorted by type
 def ll [path:path = .] {
     core-ls -lsa $path | sort-by type name -i #| table -t light
@@ -746,13 +731,16 @@ def ll [path:path = .] {
 def gits [] {
     ^git status -s | lines | parse -r '^(.)(.) (.+?)(?: -> (.*))?$' | rename idx tree name new_name
 }
-def 'poetry shell' [] {
-    let env_path = ^poetry env info | parse -r 'Virtualenv[\s\S]*?Executable:\s*(.*)' | get capture0.0 
-    let activate_script = $env_path | path split | drop | path join activate.nu
-    nu -e $'overlay use ($activate_script)'
-}
 
 # Starship config for nushell
 # use ~/.cache/starship/init.nu
 # source ~/.config/nushell/.oh-my-posh.nu
+
+# Custom Prompt
 use prompt.nu
+
+# Carapace Completer
+source ~/.cache/carapace/init.nu
+
+# Poetry Completions
+use poetry-completions.nu *

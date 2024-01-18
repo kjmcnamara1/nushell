@@ -63,3 +63,7 @@ export-env {
 }}
 
 # oh-my-posh init nu --config ~/.config/nushell/atomic.omp.json --print | save ~/.config/nushell/.oh-my-posh.nu --force
+
+# Carapace Completer
+mkdir ~/.cache/carapace
+carapace _carapace nushell | save --force ~/.cache/carapace/init.nu
