@@ -202,7 +202,7 @@ $env.config = {
         {
             name: completion_menu
             only_buffer_difference: false
-            marker: "| "
+            marker: " |  "
             type: {
                 layout: columnar
                 page_size: 10
@@ -219,7 +219,7 @@ $env.config = {
         {
             name: history_menu
             only_buffer_difference: false
-            marker: " "
+            marker: "   "
             type: {
                 layout: list
                 page_size: 10
@@ -233,7 +233,7 @@ $env.config = {
         {
             name: help_menu
             only_buffer_difference: false
-            marker: "󰋖 "
+            marker: " 󰋖  "
             type: {
                 layout: description
                 columns: 4
@@ -716,15 +716,15 @@ alias core-ls = ls
 alias py = if $nu.os-info.name != 'windows' {python3 } else {py}
 
 # List directory in a grid sorted by type
-def l [path:path = .] {
+def l [path:glob = .] {
     core-ls -s $path | sort-by type name -i | grid -cs '   '
 }
 # List directory in a grid including hidden files and sorted by type
-def la [path:path = .] {
+def la [path:glob = .] {
     core-ls -sa $path | sort-by type name -i | grid -cs '   '
 }
 # Long list directory including hidden files with actual folder sizes sorted by type
-def ll [path:path = .] {
+def ll [path:glob = .] {
     core-ls -lsa $path | sort-by type name -i #| table -t light
 }
 # Git status in table format
@@ -737,7 +737,7 @@ def gits [] {
 # source ~/.config/nushell/.oh-my-posh.nu
 
 # Custom Prompt
-use prompt.nu
+# use prompt.nu
 
 # Carapace Completer
 source ~/.cache/carapace/init.nu

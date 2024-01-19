@@ -1,0 +1,118 @@
+export extern poetry [
+# export def --wrapped poetry [
+  command                 :string@'poetry-commands'   = 'list'
+  # params?                 :string@'poetry-params'
+  ...rest                 :string@'poetry-rest'
+  --help            (-h)              # Display help for the given command. When no command is given display help for the list command.
+  --quiet           (-q)              # Do not output any message.
+  --version         (-V)              # Display this application version.
+  --ansi                              # Force ANSI output.
+  --no-ansi                           # Disable ANSI output.
+  --no-interaction  (-n)              # Do not ask any interactive question.
+  --no-plugins                        # Disables plugins.
+  --no-cache                          # Disables Poetry source caches.
+  --directory       (-C)  :directory = .   # The working directory for the Poetry command (defaults to the current working directory).
+  --verbose         (-v)          # Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug.
+] {
+  nu -c $"^poetry ([$command ...$rest] | compact -e | str join ' ')"
+}
+
+export def poetry-commands [] {
+  [
+    [value                description];
+    [`about`              `Shows information about Poetry.`]
+    [`add`                `Adds a new dependency to pyproject.toml.`]
+    [`build`              `Builds a package, as a tarball and a wheel by default.`]
+    [`check`              `Validates the content of the pyproject.toml file and its consistency with the poetry.lock file.`]
+    [`config`             `Manages configuration settings.`]
+    [`export`             `Exports the lock file to alternative formats.`]
+    [`help`               `Displays help for a command.`]
+    [`init`               `Creates a basic pyproject.toml file in the current directory.`]
+    [`install`            `Installs the project dependencies.`]
+    [`list`               `Lists commands.`]
+    [`lock`               `Locks the project dependencies.`]
+    [`new`                `Creates a new Python project at <path>.`]
+    [`publish`            `Publishes a package to a remote repository.`]
+    [`remove`             `Removes a package from the project dependencies.`]
+    [`run`                `Runs a command in the appropriate environment.`]
+    [`search`             `Searches for packages on remote repositories.`]
+    [`shell`              `Spawns a shell within the virtual environment.`]
+    [`show`               `Shows information about packages.`]
+    [`update`             `Update the dependencies as according to the pyproject.toml file.`]
+    [`version`            `Shows the version of the project or bumps it when a valid bump rule is provided.`]
+    [`cache clear`        `Clears a Poetry cache by name.`]
+    [`cache list`         `List Poetry's caches.`]
+    [`debug info`         `Shows debug information.`]
+    [`debug resolve`      `Debugs dependency resolution.`]
+    [`env info`           `Displays information about the current environment.`]
+    [`env list`           `Lists all virtualenvs associated with the current project.`]
+    [`env remove`         `Remove virtual environments associated with the project.`]
+    [`env use`            `Activates or creates a new virtualenv for the current project.`]
+    [`self add`           `Add additional packages to Poetry's runtime environment.`]
+    [`self install`       `Install locked packages (incl. addons) required by this Poetry installation.`]
+    [`self lock`          `Lock the Poetry installation's system requirements.`]
+    [`self remove`        `Remove additional packages from Poetry's runtime environment.`]
+    [`self show`          `Show packages from Poetry's runtime environment.`]
+    [`self show plugins`  `Shows information about the currently installed plugins.`]
+    [`self update`        `Updates Poetry to the latest version.`]
+    [`source add`         `Add source configuration for project.`]
+    [`source remove`      `Remove source configured for the project.`]
+    [`source show`        `Show information about sources configured for the project.`]
+  ]
+}
+
+def poetry-params [command:string] {
+
+}
+
+export def extract-command [context:string] {
+  let line = $context | split row ' ' | skip
+  # mut command = $line.0
+  let command = if ($line.0 in [cache debug env self source]) {
+    if $line.2? == 'plugins' {
+      $line | first 3
+    } else {
+      $line | first 2
+    }
+  } else {
+    $line | first
+  }
+
+  $command | str join ' ' | str trim
+}
+
+export def poetry-rest [context:string] {
+  let command = extract-command $context
+  let rest = $context | str replace $'poetry ($command)' '' | str trim
+  match $command {
+    'about' => {
+
+    }
+    'config' => (complete-config $rest)
+  }
+}
+
+export def complete-config [rest:string] {
+  [
+    [value                                      description];
+    [`--list`                                    `List configuration settings.`]
+    [`--unset`                                   `Unset configuration setting.`]
+    [`--local`                                   `Set/Get from the project's local configuration.`]
+    [`cache-dir`                                 `The path to the cache directory used by Poetry.`]
+    [`experimental.system-git-client`            `Use system git client backend for git related tasks.`]
+    [`installer.max-workers`                     `Set the maximum number of workers while using the parallel installer.`]
+    [`installer.modern-installation`             `Use a more modern and faster method for package installation.`]
+    [`installer.no-binary`                       `Configure package distribution format policy for all or specific packages.`]
+    [`installer.parallel`                        `Use parallel execution when using the new (>=1.1.0) installer.`]
+    [`virtualenvs.create`                        `Create a new virtual environment if one doesn’t already exist.`]
+    [`virtualenvs.in-project`                    `Create the virtualenv inside the project’s root directory.`]
+    [`virtualenvs.options.always-copy`           `The --always-copy parameter is passed to virtualenv on creation.`]
+    [`virtualenvs.options.no-pip`                `The --no-pip parameter is passed to virtualenv on creation.`]
+    [`virtualenvs.options.no-setuptools`         `The --no-setuptools parameter is passed to virtualenv on creation.`]
+    [`virtualenvs.options.system-site-packages`  `Give the virtual environment access to the system site-packages directory.`]
+    [`virtualenvs.path`                          `Directory where virtual environments will be created.`]
+    [`virtualenvs.prefer-active-python`          `Use currently activated Python version to create a new virtual environment.`]
+    [`virtualenvs.prompt`                        `Format string defining the prompt to be displayed when the virtual environment is activated.`]
+    [`warnings.export`                            ``]
+  ]
+}
