@@ -125,6 +125,8 @@ def "nu-complete poetry groups" [] {
 
 def "nu-complete poetry export formats" [] { [constraints.txt requirements.txt] }
 
+def "nu-complete poetry source add priority" [] { [ default primary secondary supplemental explicit ] }
+
 # Tool for dependency management and packaging in Python
 # export extern poetry [
 #   --help            (-h)              # Display help for the given command. When no command is given display help for the list command.
@@ -325,95 +327,120 @@ export extern "poetry update" [
 
 # Shows the version of the project or bumps it when a valid bump rule is provided.
 export extern "poetry version" [
-  ...args
+  version?:string                   # The version number or the rule to update the version.
+  --short         (-s)              # Output the version number only
+  --dry-run                         # Do not update pyproject.toml file
+  --next-phase                      # Increment the phase of the current version
 ]
 
-# Clears Poetry's cache.
+# Clears a Poetry cache by name.
 export extern "poetry cache clear" [
-    ...args
+  cache:string                      # The name of the cache to clear.
+  --all                             # Clear all entries in the cache.
 ]
 
 # List Poetry's caches.
 export extern "poetry cache list" [
-    ...args
 ]
 
 # Shows debug information.
 export extern "poetry debug info" [
-    ...args
 ]
 
 # Debugs dependency resolution.
 export extern "poetry debug resolve" [
-    ...args
+  package                           # The packages to resolve.
+  --extras           (-E)           # Extras to activate for the dependency. (multiple values allowed)
+  --python                          # Python version(s) to use for resolution.
+  --tree                            # Display the dependency tree.
+  --install                         # Show what would be installed for the current system.
 ]
 
 # Displays information about the current environment.
 export extern "poetry env info" [
-    ...args
+  --path           (-p)             # Only display the environment's path.
+  --executable     (-e)             # Only display the environment's python executable path.
 ]
 
 # Lists all virtualenvs associated with the current project.
 export extern "poetry env list" [
-    ...args
+  --full-path                       # Output the full paths of the virtualenvs.
 ]
 
 # Remove virtual environments associated with the project.
 export extern "poetry env remove" [
-    ...args
+  ...python                         # The python executables associated with, or names of the virtual environments which are to be removed.
+  --all                             # Remove all managed virtual environments associated with the project.
 ]
 
 # Activates or creates a new virtualenv for the current project.
 export extern "poetry env use" [
-    ...args
+  python                            # The python executable to use.
 ]
 
 # Add additional packages to Poetry's runtime environment.
 export extern "poetry self add" [
-    ...args
+  ...name                   :string         # The packages to add.
+  --editable           (-e)                 # Add vcs/path dependencies as editable.
+  --extras             (-E) :string         # Extras to activate for the dependency. (multiple values allowed)
+  --source                  :string         # Name of the source to use to install the package.
+  --allow-prereleases                       # Accept prereleases.
+  --dry-run                                 # Output the operations but do not execute anything (implicitly enables --verbose).
 ]
 
 # Install locked packages (incl. addons) required by this Poetry installation.
 export extern "poetry self install" [
-    ...args
+  --sync                                    # Synchronize the environment with the locked packages and the specified groups.
+  --dry-run                                 # Output the operations but do not execute anything (implicitly enables --verbose).
 ]
 
 # Lock the Poetry installation's system requirements.
 export extern "poetry self lock" [
-    ...args
+  --no-update                               # Do not update locked versions, only refresh lock file.
+  --check                                   # Check that the poetry.lock file corresponds to the current version of pyproject.toml. (Deprecated) Use poetry check --lock instead.
 ]
 
 # Remove additional packages from Poetry's runtime environment.
 export extern "poetry self remove" [
-    ...args
+  ...packages              :string          # The packages to remove.
+  --dry-run                                 # Output the operations but do not execute anything (implicitly enables --verbose).
 ]
 
 # Show packages from Poetry's runtime environment.
 export extern "poetry self show" [
-    ...args
+  package?                :string     # The package to inspect
+  --addons                            # List only add-on packages installed.
+  --tree             (-t)             # List the dependencies as a tree.
+  --latest           (-l)             # Show the latest version.
+  --outdated         (-o)             # Show the latest version but only for packages that are outdated.
 ]
 
 # Shows information about the currently installed plugins.
 export extern "poetry self show plugins" [
-    ...args
 ]
 
 # Updates Poetry to the latest version.
 export extern "poetry self update" [
-    ...args
+  version?                = latest    # The version to update to. [default: "latest"]
+  --preview                           # Allow the installation of pre-release versions.
+  --dry-run                           # Output the operations but do not execute anything (implicitly enables --verbose).
 ]
 
 # Add source configuration for project.
 export extern "poetry source add" [
-    ...args
+  name                                                                              # Source repository name.
+  url?                                                                              # Source repository URL. Required, except for PyPI, for which it is not allowed.
+  --default     (-d)                                                                # Set this source as the default (disable PyPI). A default source will also be the fallback source if you add other sources. (Deprecated, use --priority)
+  --secondary   (-s)                                                                # Set this source as secondary. (Deprecated, use --priority)
+  --priority    (-p)  :string@"nu-complete poetry source add priority"  = primary   # Set the priority of this source. One of: default, primary, secondary, supplemental, explicit. Defaults to primary.
 ]
 
 # Remove source configured for the project.
 export extern "poetry source remove" [
-    ...args
+  name                        :string   # Source repository name.
 ]
 
 # Show information about sources configured for the project.
 export extern "poetry source show" [
-    ...args
+  ...source                   :string   # Source(s) to show information for. Defaults to showing all sources.
 ]

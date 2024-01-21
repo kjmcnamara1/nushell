@@ -737,7 +737,7 @@ def gits [] {
 # source ~/.config/nushell/.oh-my-posh.nu
 
 # Custom Prompt
-# use prompt.nu
+use prompt.nu
 
 # Carapace Completer
 source ~/.cache/carapace/init.nu
