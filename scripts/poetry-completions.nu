@@ -101,7 +101,6 @@ def "nu-complete poetry config values" [context:string] {
   let token = $context | split row ' ' | drop | last
   let values = {
     experimental.system-git-client: [ 'true' 'false' ]
-    installer.max-workers: [...1..16]
     installer.modern-installation: [ 'true' 'false' ]
     installer.no-binary: [ 'true' 'false' 'package1,package2']
     installer.parallel: [ 'true' 'false' ]
