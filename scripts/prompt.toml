@@ -22,7 +22,7 @@ duration = ""
 time = ""
 
 [symbols.os]
-windows = "󰍲"
+windows = ""
 ubuntu = "󰕈"
 suse = ""
 raspbian = "󰐿"
