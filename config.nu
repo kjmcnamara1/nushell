@@ -729,6 +729,7 @@ def ll [path:glob = .] {
 }
 # Git status in table format
 def gits [] {
+    # TODO: Need to rewrite command 'lsg' for ls with all git stats
     ^git status -s | lines | parse -r '^(.)(.) (.+?)(?: -> (.*))?$' | rename idx tree name new_name
 }
 
@@ -737,7 +738,8 @@ def gits [] {
 # source ~/.config/nushell/.oh-my-posh.nu
 
 # Custom Prompt
-use prompt.nu
+# source fancy-prompt.nu
+source simple-prompt.nu
 
 # Carapace Completer
 source ~/.cache/carapace/init.nu

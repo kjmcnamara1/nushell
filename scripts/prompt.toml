@@ -14,7 +14,6 @@ green = '#A3BE8C'
 purple = '#B48EAD'
 
 [symbols]
-home = " "
 read_only = ""
 truncate = "…"
 python = ""
@@ -43,7 +42,6 @@ redhat = "󱄛"
 redhatenterprise = "󱄛"
 
 [symbols.git]
-symbol = ""
 branch = "󰘬"
 ahead = '⇡'
 behind = '⇣'
@@ -56,9 +54,14 @@ renamed = "»"
 deleted = "✘"
 ignored = ''
 
-[symbols.directories]
-"Documents" = "󰈙"
-"Downloads" = ""
-"Music" = "󰝚"
-"Pictures" = ""
-"Code" = "󰲋"
+[symbols.path]
+git = ""
+default = ''
+'~' = ""
+documents = "󰈙"
+downloads = ""
+music = "󰝚"
+pictures = ""
+code = "󰲋"
+onedrive = ''
+# mega = 'M'

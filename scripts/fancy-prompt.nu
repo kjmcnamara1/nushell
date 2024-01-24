@@ -1,4 +1,4 @@
-export-env {
+# export-env {
     let c = $nu.default-config-dir | path join scripts prompt.toml | open
     
     def create-prompt [] {
@@ -96,33 +96,48 @@ export-env {
     def path-group [] {
         # Git path or regular path
         let is_gp = is-git-path
-        let path = if $is_gp {
-            let git_path = $"(get-git-path | path dirname)(char path_sep)" 
-            $"($c.symbols.git.symbol) (pwd | str replace $git_path '')"
-        } else {
-            pwd | str replace $nu.home-path $c.symbols.home
-        }
-        # Directory substitutions
-        let path = $c.symbols.directories |
-            transpose key val |
-            reduce -f $path { |it, acc| 
-                $acc | str replace $it.key $it.val 
-        }
-        # Truncate path
-        let path_length = $path | path split | length
-        let path = if ($path_length > 3) {
-            if $is_gp {
-                $path | path split | first | 
-                append (truncate-path $path (3 - 1) $c.symbols.truncate) |
-                path join
-            } else {
-                truncate-path $path 3 $c.symbols.truncate
-            }
-        } else { $path }
-        # Read-only icon
-        let readonly = if (is-readonly) { $" (ansi $c.palette.red)($c.symbols.read_only)" }
+        # let path = if $is_gp {
+        #     let git_path = $"(get-git-path | path dirname)(char path_sep)" 
+        #     $"($c.symbols.git.symbol) (pwd | str replace $git_path '')"
+        # } else {
+        #     pwd | str replace $nu.home-path $c.symbols.home
+        # }
+        # # Directory substitutions
+        # let path = $c.symbols.directories |
+        #     transpose key val |
+        #     reduce -f $path { |it, acc| 
+        #         $acc | str replace $it.key $it.val 
+        # }
+        # # Truncate path
+        # let path_length = $path | path split | length
+        # let path = if ($path_length > 3) {
+        #     if $is_gp {
+        #         $path | path split | first | 
+        #         append (truncate-path $path (3 - 1) $c.symbols.truncate) |
+        #         path join
+        #     } else {
+        #         truncate-path $path 3 $c.symbols.truncate
+        #     }
+        # } else { $path }
+        # # Read-only icon
+        # let readonly = if (is-readonly) { $" (ansi $c.palette.red)($c.symbols.read_only)" }
     
-        $"($path)($readonly)"
+        # $"($path)($readonly)"
+
+        let path = pwd | str replace $nu.home-path '~'
+
+        let symbol = if $is_gp { 
+            $c.symbols.path.git
+        } else {
+            let base = $path | path split | last | str downcase
+            $c.symbols.path | transpose key val | where {|x| $base =~ $x.key} | get -i val.0 | default $c.symbols.path.default
+        }
+
+        let truncated_path = truncate-path $path 3 $c.symbols.truncate
+
+        let readonly = if (is-readonly) { $" (ansi $c.palette.red)($c.symbols.read_only)" }
+
+        $"($symbol) ($truncated_path)($readonly)"
     }
     
     def git-group [fg] {
@@ -146,7 +161,7 @@ export-env {
         let branch = ^git branch --show-current | str trim
         let stash = do { ^git stash show -u } | complete | get stdout | lines | length | if $in > 0 { $in - 1 } else { 0 }
         let changes = ^git status -s | lines | parse -r '^(.)(.) (.+?)(?: -> (.*))?$' | rename idx tree name new_name
-        let compare = $"(^git rev-list --left-right --count $'HEAD...origin/($branch)')" | split chars
+        let compare = do {^git rev-list --left-right --count $'HEAD...origin/($branch)'} | complete | get stdout | str trim | split chars
         {
             branch: {
                 symbol: $c.symbols.git.branch 
@@ -154,11 +169,11 @@ export-env {
                 }
             ahead: {
                 symbol: $c.symbols.git.ahead 
-                val:($compare | first | into int) 
+                val: (if ($compare | is-empty) {0} else {$compare | first | into int})
                 }
             behind: {
                 symbol: $c.symbols.git.behind 
-                val: ($compare | last | into int) 
+                val: (if ($compare | is-empty) {0} else {$compare | last | into int})
                 }
             stashed: {
                 symbol: $c.symbols.git.stashed 
@@ -296,24 +311,43 @@ export-env {
         }
     }
     
-    def truncate-path [
+    export def truncate-path [
         path:path=. 
         truncation_length:int=3 
         truncation_symbol:string='...'
     ] {
-        $path |path expand | path split | 
-        last $truncation_length | 
-        prepend $truncation_symbol |
-        path join
+        if ($path | path split | length) <= $truncation_length { return $path }
+        if (is-git-path $path) {
+            let git_parent = $"(get-git-path | path dirname)(char path_sep)" 
+            return ($path | path expand | str replace $git_parent '')
+            # let git_root = $path | path expand | str replace $git_parent '' | path split
+            # if ($git_root | length) > $truncation_length {
+            #     return (
+            #         $git_root | first
+            #         | append $truncation_symbol
+            #         | append ($git_root | last ($truncation_length - 1))
+            #         | path join
+            #     )
+            # }
+        }
+
+        $path
+        | path expand
+        | path split 
+        | last $truncation_length 
+        | prepend $truncation_symbol 
+        | path join
     }
     
-    def is-git-path [] {
+    export def is-git-path [path:path=.] {
+        cd $path
         do { ^git rev-parse --is-inside-work-tree } | complete | get stdout | is-empty | not $in
     }
     
-    def get-git-path [] {
-        if (is-git-path) {
-            do { ^git rev-parse --git-dir } | complete | get stdout | path expand | path dirname
+    export def get-git-path [path:path=.] {
+        if (is-git-path $path) {
+            cd $path
+            do { ^git rev-parse --git-dir } | complete | get stdout | path expand | path dirname | path split | path join
         }
     }
 
@@ -328,4 +362,4 @@ export-env {
         # TRANSIENT_PROMPT_COMMAND_RIGHT: {|| transient-right-prompt}
         # TRANSIENT_PROMPT_INDICATOR_VI_INSERT: " ❯ "
     }
-}
+# }
