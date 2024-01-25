@@ -1,4 +1,4 @@
-# export-env {
+export-env {
     let c = $nu.default-config-dir | path join scripts prompt.toml | open
     
     def create-prompt [] {
@@ -77,53 +77,22 @@
             (ansi $bg)
             (if not $is_gp {''})
             (git-group $c.palette.black $c.palette.green)
-            # (if $is_gp {git-info $c.palette.black $bg})
-            # (git-info $c.palette.black $bg)
         ] | str join
     }
     
     def path-group [] {
-        # Git path or regular path
-        let is_gp = is-git-path
-        # let path = if $is_gp {
-        #     let git_path = $"(get-git-path | path dirname)(char path_sep)" 
-        #     $"($c.symbols.git.symbol) (pwd | str replace $git_path '')"
-        # } else {
-        #     pwd | str replace $nu.home-path $c.symbols.home
-        # }
-        # # Directory substitutions
-        # let path = $c.symbols.directories |
-        #     transpose key val |
-        #     reduce -f $path { |it, acc| 
-        #         $acc | str replace $it.key $it.val 
-        # }
-        # # Truncate path
-        # let path_length = $path | path split | length
-        # let path = if ($path_length > 3) {
-        #     if $is_gp {
-        #         $path | path split | first | 
-        #         append (truncate-path $path (3 - 1) $c.symbols.truncate) |
-        #         path join
-        #     } else {
-        #         truncate-path $path 3 $c.symbols.truncate
-        #     }
-        # } else { $path }
-        # # Read-only icon
-        # let readonly = if (is-readonly) { $" (ansi $c.palette.red)($c.symbols.read_only)" }
-    
-        # $"($path)($readonly)"
-
+        # Home path subsitution
         let path = pwd | str replace $nu.home-path '~'
-
-        let symbol = if $is_gp { 
+        # Directory symbol
+        let symbol = if (is-git-path) { 
             $c.symbols.path.git
         } else {
             let base = $path | path split | last | str downcase
             $c.symbols.path | transpose key val | where {|x| $base =~ $x.key} | get -i val.0 | default $c.symbols.path.default
         }
-
+        # # Truncate path
         let truncated_path = truncate-path $path 3 $c.symbols.truncate
-
+        # # Read-only icon
         let readonly = if (is-readonly) { $" (ansi $c.palette.red)($c.symbols.read_only)" }
 
         $"($symbol) ($truncated_path)($readonly)"
@@ -167,6 +136,7 @@
     }
     
     def transient-prompt [] {
+        # "  "
         $"(char newline)  "
         # $"  (indicator-prompt insert)"
     }
@@ -247,4 +217,4 @@
         TRANSIENT_PROMPT_COMMAND_RIGHT: {|| transient-right-prompt}
         # TRANSIENT_PROMPT_INDICATOR_VI_INSERT: " ❯ "
     }
-# }
+}

@@ -715,31 +715,18 @@ $env.config = {
 alias core-ls = ls
 alias py = if $nu.os-info.name != 'windows' {python3 } else {py}
 
-# List directory in a grid sorted by type
-def l [path:glob = .] {
-    core-ls -s $path | sort-by type name -i | grid -cs '   '
-}
-# List directory in a grid including hidden files and sorted by type
-def la [path:glob = .] {
-    core-ls -sa $path | sort-by type name -i | grid -cs '   '
-}
-# Long list directory including hidden files with actual folder sizes sorted by type
-def ll [path:glob = .] {
-    core-ls -lsa $path | sort-by type name -i #| table -t light
-}
-# Git status in table format
-def gits [] {
-    # TODO: Need to rewrite command 'lsg' for ls with all git stats
-    ^git status -s | lines | parse -r '^(.)(.) (.+?)(?: -> (.*))?$' | rename idx tree name new_name
-}
+# Custom commands
+use commands.nu *
 
 # Starship config for nushell
 # use ~/.cache/starship/init.nu
 # source ~/.config/nushell/.oh-my-posh.nu
 
 # Custom Prompt
+source bare-prompt.nu
+# source simple-prompt.nu
 # source fancy-prompt.nu
-source simple-prompt.nu
+# source final-prompt.nu
 
 # Carapace Completer
 source ~/.cache/carapace/init.nu
