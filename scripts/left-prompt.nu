@@ -90,9 +90,9 @@ export-env {
             let base = $path | path split | last | str downcase
             $c.symbols.path | transpose key val | where {|x| $base =~ $x.key} | get -i val.0 | default $c.symbols.path.default
         }
-        # # Truncate path
+        # Truncate path
         let truncated_path = truncate-path $path 3 $c.symbols.truncate
-        # # Read-only icon
+        # Read-only icon
         let readonly = if (is-readonly) { $" (ansi $c.palette.red)($c.symbols.read_only)" }
 
         $"($symbol) ($truncated_path)($readonly)"
