@@ -723,10 +723,7 @@ use commands.nu *
 # source ~/.config/nushell/.oh-my-posh.nu
 
 # Custom Prompt
-# source bare-prompt.nu
-# source simple-prompt.nu
-# source fancy-prompt.nu
-source final-prompt.nu
+source prompt.nu
 
 # Carapace Completer
 source ~/.cache/carapace/init.nu
