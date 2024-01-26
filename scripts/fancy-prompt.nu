@@ -1,4 +1,4 @@
-# export-env {
+export-env {
     let c = $nu.default-config-dir | path join scripts prompt.toml | open
     
     def create-prompt [] {
@@ -10,12 +10,12 @@
     }
     
     def left-prompt [] {
-        [
-            $"(ansi default_dimmed)╭─(ansi reset)"
-            $"(os-group $c.palette.white $c.palette.gray)"
-            $"(user-group $c.palette.gray $c.palette.light)"
-            $"(directory-group $c.palette.white $c.palette.purple)"
-        ] | str join
+      [
+        $"(ansi default_dimmed)╭─(ansi reset)"
+          $"(os-group $c.palette.white $c.palette.gray)"
+          $"(user-group $c.palette.gray $c.palette.light)"
+          $"(directory-group $c.palette.white $c.palette.purple)"
+      ] | str join
     }
     
     def prompt-fill [] {
@@ -362,4 +362,4 @@
         # TRANSIENT_PROMPT_COMMAND_RIGHT: {|| transient-right-prompt}
         # TRANSIENT_PROMPT_INDICATOR_VI_INSERT: " ❯ "
     }
-# }
+}
