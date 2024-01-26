@@ -1,40 +1,46 @@
-# export-env {
+export-env {
     let c = $nu.default-config-dir | path join scripts prompt.toml | open
     
-    def create-prompt [] {
+    def create-prompt [--transient] {
+        let fill = if $transient { - } else { '∙' }
+        let left = if $transient { left-prompt --transient } else { left-prompt }
+        let right = if $transient { right-prompt --transient } else { right-prompt }
+        let len_left = $left | ansi strip | str length -g | $in + (is-ssh | into int)
+        let fill_right = $right | fill -a r -c $fill -w ((term size).columns - $len_left)
+
         [
-            (char newline)
-            $"(left-prompt)(prompt-fill)(right-prompt)(char newline)"
-            $"(ansi default_dimmed)╰─(ansi reset)"
+            "\n" 
+            $left 
+            (ansi $c.palette.gray)
+            $fill_right
         ] | str join
     }
     
-    def left-prompt [] {
+    def left-prompt [--transient] {
+        if $transient { 
+            return ''
+        }
         [
-            $"(ansi default_dimmed)╭─(ansi reset)"
-            $"(os-group $c.palette.white $c.palette.gray)"
-            $"(user-group $c.palette.gray $c.palette.light)"
-            $"(directory-group $c.palette.white $c.palette.purple)"
+            (ansi $c.palette.gray) ╭─ (ansi reset)
+            (os-group $c.palette.white $c.palette.gray)
+            (user-group $c.palette.gray $c.palette.yellow)
+            (directory-group $c.palette.white $c.palette.red)
+            ' '
         ] | str join
     }
     
-    def prompt-fill [] {
-        let left_prompt_length = (left-prompt | ansi strip | split row "\n" | each { || str length -g } | math max)
-        let right_prompt_length = (right-prompt | ansi strip | str length -g)
-        let fill_length = (
-            (term size).columns - 
-            ($left_prompt_length + $right_prompt_length) - 
-            (if (is-ssh) {3} else {2}) - 
-            (if $nu.os-info.name == 'windows' {2} else {0})
-        )
-        
-        $"(ansi $c.palette.gray) ('' | fill -c ∙ -w $fill_length) (ansi reset)"
-    }
-    
-    def right-prompt [] {
+    def right-prompt [--transient] {
+        let virtual_env = if "VIRTUAL_ENV_PROMPT" in $env { $"\(($env.VIRTUAL_ENV_PROMPT)\) "}
+        if not $transient {
+            return $" (python-group $c.palette.yellow $c.palette.blue)(time-group)"
+        }
         [
-            (python-group $c.palette.yellow $c.palette.blue)
-            (time-group $c.palette.black $c.palette.white)
+            ' '
+            (ansi $c.palette.blue)
+            $virtual_env
+            (ansi $c.palette.purple)
+            (pwd | str replace $nu.home-path '~')
+            (ansi reset)
         ] | str join
     }
     
@@ -42,122 +48,82 @@
         let hostname = (sys).host.name | str downcase | split words | first
         let os = $c.symbols.os | get $hostname
         [
-            $"(ansi -e {fg:$bg })(ansi reset)"
-            $"(ansi -e {fg:$fg bg:$bg}) ($os) (ansi reset)"
-            $"(ansi -e {fg:$bg })(ansi reset)"
+            (ansi -e {fg:$bg })  (ansi reset)
+            (ansi -e {fg:$fg bg:$bg})
+            ' ' ($os) ' '
+            (ansi reset)
+            (ansi -e {fg:$bg })  (ansi reset)
         ] | str join
     }
     
     def user-group [fg bg] {
         let admin = is-admin
         let ssh = is-ssh
-        let bg = match [$admin $ssh] {
-            [true false] => $c.palette.red
-            [_ true] => $c.palette.teal
-            _ => $bg
-        }
-        let fg = if $bg == $c.palette.red { $c.palette.white } | default $fg
-        # if true {
         if ($admin or $ssh) {
             [
-                $"(ansi -e {fg:$bg})"
-                $"(ansi -e {fg:$fg bg:$bg}) "
-                (if ($admin and $ssh) {ansi red})
+                (ansi -e {fg:$bg}) 
+                (ansi -e {fg:$fg bg:$bg}) ' '
+                (if $admin {ansi $c.palette.red})
                 (whoami)
                 (ansi $fg)
-                @(hostname)
-                $" (ansi reset)(ansi -e {fg:$bg})(ansi reset)"
+                @ (hostname)
+                ' ' (ansi reset) (ansi -e {fg:$bg})  (ansi reset)
             ] | str join
         }
     }
     
     def hostname [] {
         [
-            # (ansi green_dimmed)
             (sys | get host.hostname)
-            (if (is-ssh) {$'(ansi blue_dimmed) 🌐'})
+            (if (is-ssh) {$'(ansi $c.palette.blue) 🌐'})
         ] | str join
     }
     
     def directory-group [fg bg] {
-        let is_gp = is-git-path
         [
-            $"(ansi -e {fg:$bg})"
-            $"(ansi -e {fg:$fg bg:$bg}) "
-            $"(path-group) (ansi reset)"
+            (ansi -e {fg:$bg}) 
+            (ansi -e {fg:$fg bg:$bg})
+            ' ' (path-group) ' '
+            (ansi reset)
             (ansi $bg)
-            (if not $is_gp {''})
             (git-group $c.palette.black)
-            # (if $is_gp {git-info $c.palette.black $bg})
-            # (git-info $c.palette.black $bg)
         ] | str join
     }
     
     def path-group [] {
-        # Git path or regular path
-        let is_gp = is-git-path
-        # let path = if $is_gp {
-        #     let git_path = $"(get-git-path | path dirname)(char path_sep)" 
-        #     $"($c.symbols.git.symbol) (pwd | str replace $git_path '')"
-        # } else {
-        #     pwd | str replace $nu.home-path $c.symbols.home
-        # }
-        # # Directory substitutions
-        # let path = $c.symbols.directories |
-        #     transpose key val |
-        #     reduce -f $path { |it, acc| 
-        #         $acc | str replace $it.key $it.val 
-        # }
-        # # Truncate path
-        # let path_length = $path | path split | length
-        # let path = if ($path_length > 3) {
-        #     if $is_gp {
-        #         $path | path split | first | 
-        #         append (truncate-path $path (3 - 1) $c.symbols.truncate) |
-        #         path join
-        #     } else {
-        #         truncate-path $path 3 $c.symbols.truncate
-        #     }
-        # } else { $path }
-        # # Read-only icon
-        # let readonly = if (is-readonly) { $" (ansi $c.palette.red)($c.symbols.read_only)" }
-    
-        # $"($path)($readonly)"
-
         let path = pwd | str replace $nu.home-path '~'
-
-        let symbol = if $is_gp { 
+        # Directory symbol
+        let symbol = if (is-git-path) { 
             $c.symbols.path.git
         } else {
             let base = $path | path split | last | str downcase
             $c.symbols.path | transpose key val | where {|x| $base =~ $x.key} | get -i val.0 | default $c.symbols.path.default
         }
-
         let truncated_path = truncate-path $path 3 $c.symbols.truncate
-
-        let readonly = if (is-readonly) { $" (ansi $c.palette.red)($c.symbols.read_only)" }
+        let readonly = if (is-readonly) { $" (ansi $c.palette.black)($c.symbols.read_only)" }
 
         $"($symbol) ($truncated_path)($readonly)"
     }
     
     def git-group [fg] {
-        if (is-git-path) {
-                let stats = git-stats
-                let flags = $stats | reject branch | 
-                    items { |key, val| if ($val.val > 0) {$"($val.symbol)($val.val)"} } | 
-                    compact | str join ' '
-                let up_to_date = ($flags | str length -g) > 0
-                let bg = if $up_to_date { $c.palette.yellow } else { $c.palette.green }
-            [
-                $"(ansi -e {bg:$bg}) "
-                $"(ansi $fg)"
-                ([$stats.branch.symbol $stats.branch.val $flags] | str join ' ')
-                $" (ansi reset)(ansi $bg)(ansi reset)"
-            ] | str join
-        }
+        if not (is-git-path) { return  }
+        
+        let stats = git-stats
+        let flags = $stats | reject branch | 
+            items { |key, val| if ($val.val > 0) {$"($val.symbol)($val.val)"} } | 
+            compact | str join ' '
+        let up_to_date = ($flags | str length -g) > 0
+        let bg = if $up_to_date { $c.palette.yellow } else { $c.palette.green }
+
+        [
+            (ansi -e {bg:$bg}) ' '
+            (ansi $fg)
+            ([$stats.branch.symbol $stats.branch.val $flags] | str join ' ')
+            ' ' (ansi reset) (ansi $bg)  (ansi reset)
+        ] | str join
     }
     
-    def git-stats [] {
+    def git-stats []: nothing -> record {
         let branch = ^git branch --show-current | str trim
         let stash = do { ^git stash show -u } | complete | get stdout | lines | length | if $in > 0 { $in - 1 } else { 0 }
         let changes = ^git status -s | lines | parse -r '^(.)(.) (.+?)(?: -> (.*))?$' | rename idx tree name new_name
@@ -165,7 +131,7 @@
         {
             branch: {
                 symbol: $c.symbols.git.branch 
-                val:$branch 
+                val: $branch 
                 }
             ahead: {
                 symbol: $c.symbols.git.ahead 
@@ -205,14 +171,13 @@
                 }
         }
     }
-            
     
     def python-group [fg bg] {
         if ($env.VIRTUAL_ENV_PROMPT? != null) {
             [
-                $"(ansi -e {fg:$bg})"
-                $"(ansi -e {fg:$fg bg:$bg})  ($env.VIRTUAL_ENV_PROMPT) "
-                $"(ansi reset)(ansi -e {fg:$bg})(ansi reset) "
+                (ansi -e {fg:$bg}) 
+                (ansi -e {fg:$fg bg:$bg}) '  ' ($env.VIRTUAL_ENV_PROMPT) ' '
+                (ansi reset) (ansi -e {fg:$bg})  (ansi reset) ' '
             ] | str join
         }
     }
@@ -222,34 +187,47 @@
         let duration = ($env.CMD_DURATION_MS | into int) // 1000 | into duration -u sec
         if ($duration > $min_time) {
             [
-                $"(ansi -e {fg:$bg})(ansi reset)"
-                $"(ansi -e {fg:$fg bg:$bg}) ($duration)  "
-                # $"(ansi -e {fg:$neighbor_bg})(ansi reset)"
+                (ansi -e {fg:$bg})  (ansi reset)
+                (ansi -e {fg:$fg bg:$bg}) ' ' ($duration) '  '
             ] | str join
         } 
     }
     
-    def time-group [fg bg] {
+    def time-group [] {
+        let fg_time = $c.palette.black
+        let bg_time = $c.palette.white
+        let fg_date = $c.palette.white
+        let bg_date = $c.palette.purple
         let cdm = cmd-duration-module $c.palette.black $c.palette.orange 
         [
-            $"($cdm)(ansi -e {fg:$bg})"
-            (if $cdm == null {''} else {''})
-            # (if $cdm != null {$"($cdm)(ansi -e {fg:$bg})"} else {$"(ansi -e {fg:$bg})"})
-            # ($cdm | default $"(ansi -e {fg:$bg})")
-            $"(ansi -e {fg:$fg bg:$bg}) (date now | format date %X)  (ansi reset)"
-            $"(ansi -e {fg:$bg})"
+            $cdm
+            ( ansi -e {fg:$bg_time} )
+            ( if $cdm == null {''} else {''} )
+            ( ansi -e {fg:$fg_time bg:$bg_time} )
+            ' ' (date now | format date %X) '  '
+            ( ansi -e {fg:$bg_time bg:$bg_date} )
+            
+            ' ' (date now | format date %v) '  '
+            (ansi reset)
+            (ansi -e {fg:$bg_date}) 
+            (ansi reset)
         ] | str join
     }
     
-    # def repeat [char:string=' ' times:int=1] {
-    #     1..$times | each { || $char } | str join
-    # }
-    
-    def continuation-prompt [] {
-        $"(ansi $c.palette.gray)∙∙∙(ansi reset)"
+    def continuation-prompt [char:string=∙ --transient] {
+        let length = indicator-prompt insert --transient=$transient
+            | ansi strip | split row (char newline) | last | str length -g
+
+        [
+            (ansi $c.palette.gray)
+            ('' | fill -c $char -w $length)
+            (ansi reset)
+        ] | str join
     }
     
-    def indicator-prompt [mode:string] {
+    def indicator-prompt [mode:string --transient] {
+        if $transient { return $"(ansi $c.palette.lake) ❯ (ansi reset)" }
+
         let characters = { insert:"  " normal:"  " }
         let character = $characters | get $mode
         let format = if ( $env.LAST_EXIT_CODE | into bool ) {
@@ -258,28 +236,10 @@
             ansi $c.palette.green
         }
     
-        return $"(ansi reset)($format)($character)(ansi reset)"
-    }
-    
-    def transient-prompt [] {
-        # "  "
-        $"(char newline)  "
-        # $"  (indicator-prompt insert)"
-    }
-
-    def transient-right-prompt [] {
-        let fg = $c.palette.white
-        let bg = $c.palette.purple
         [
-            (python-group $c.palette.yellow $c.palette.blue)
-            # (ansi $bg)
-            # 
-            # (ansi -e {fg:$fg bg:$bg})
-            (pwd | str replace $nu.home-path '~')
-            # (ansi reset)
-            # (ansi $bg)
-            # 
-            # (ansi reset)
+            (ansi $c.palette.gray)
+            │ "\n"           
+            ╰─ (ansi reset) $format $character (ansi reset)
         ] | str join
     }
     
@@ -293,14 +253,18 @@
     
     def is-readonly [path:path=.] {
         if $nu.os-info.name == 'windows' {
-            ls -lD ($path | path expand) | first | get readonly
-        } else {
-            let dir_info = ls -lD ($path | path expand) | select user group mode readonly | first
-            let user_match = $dir_info.user == (whoami)
-            let permissions = $dir_info.mode | split chars
-            
-            $dir_info.readonly or ($user_match and $permissions.1 == -) or (not $user_match and $permissions.7 == -)
+            return ( ls -lD ($path | path expand) | first | get readonly )
         }
+
+        let dir_info = ls -lD ($path | path expand) | select user group mode readonly | first
+        let user_match = $dir_info.user == (whoami)
+        let permissions = $dir_info.mode | split chars
+        
+        (
+            $dir_info.readonly
+            or ($user_match and $permissions.1 == -)
+            or (not $user_match and $permissions.7 == -)
+        )
     }
     
     export def truncate-path [
@@ -309,18 +273,10 @@
         truncation_symbol:string='...'
     ] {
         if ($path | path split | length) <= $truncation_length { return $path }
+
         if (is-git-path $path) {
             let git_parent = $"(get-git-path | path dirname)(char path_sep)" 
             return ($path | path expand | str replace $git_parent '')
-            # let git_root = $path | path expand | str replace $git_parent '' | path split
-            # if ($git_root | length) > $truncation_length {
-            #     return (
-            #         $git_root | first
-            #         | append $truncation_symbol
-            #         | append ($git_root | last ($truncation_length - 1))
-            #         | path join
-            #     )
-            # }
         }
 
         $path
@@ -333,25 +289,42 @@
     
     export def is-git-path [path:path=.] {
         cd $path
-        do { ^git rev-parse --is-inside-work-tree } | complete | get stdout | is-empty | not $in
+        do { ^git rev-parse --is-inside-work-tree }
+        | complete | get stdout | is-empty | not $in
     }
     
     export def get-git-path [path:path=.] {
         if (is-git-path $path) {
             cd $path
-            do { ^git rev-parse --git-dir } | complete | get stdout | path expand | path dirname | path split | path join
+            do { ^git rev-parse --git-dir }
+            | complete | get stdout | path expand
+            | path dirname | path split | path join
         }
     }
 
     load-env {
         VIRTUAL_ENV_DISABLE_PROMPT: true
-        PROMPT_COMMAND: {|| create-prompt}
-        PROMPT_COMMAND_RIGHT: '' # {|| create_right_prompt}
-        PROMPT_INDICATOR_VI_INSERT: {|| indicator-prompt insert}
-        PROMPT_INDICATOR_VI_NORMAL: {|| indicator-prompt normal}
-        PROMPT_MULTILINE_INDICATOR: (continuation-prompt)
-        TRANSIENT_PROMPT_COMMAND: {|| transient-prompt}
-        TRANSIENT_PROMPT_COMMAND_RIGHT: {|| transient-right-prompt}
-        # TRANSIENT_PROMPT_INDICATOR_VI_INSERT: " ❯ "
+        
+        PROMPT_COMMAND: { || create-prompt }
+        # PROMPT_COMMAND_RIGHT: { || right-prompt }
+        PROMPT_COMMAND_RIGHT: ''
+
+        PROMPT_INDICATOR: ' : '
+        PROMPT_INDICATOR_VI_INSERT: { || indicator-prompt insert }
+        PROMPT_INDICATOR_VI_NORMAL: { || indicator-prompt normal }
+        PROMPT_MULTILINE_INDICATOR: { || continuation-prompt }
+        
+        TRANSIENT_PROMPT_COMMAND: { || create-prompt --transient }
+        # TRANSIENT_PROMPT_COMMAND_RIGHT: { || right-prompt --transient }
+        TRANSIENT_PROMPT_COMMAND_RIGHT: ''
+
+        TRANSIENT_PROMPT_INDICATOR: ' : '
+        TRANSIENT_PROMPT_INDICATOR_VI_INSERT: { || indicator-prompt insert --transient }
+        TRANSIENT_PROMPT_INDICATOR_VI_NORMAL: { || indicator-prompt normal --transient }
+        TRANSIENT_PROMPT_MULTILINE_INDICATOR: { || continuation-prompt ' ' --transient }
+        
+        # config: ($env.config? | default {} | merge {
+        #     render_right_prompt_on_last_line: false
+        # })
     }
-# }
+}
