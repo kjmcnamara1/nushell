@@ -2,6 +2,9 @@
 #
 # version = "0.88.1"
 
+# Custom Prompt
+use prompt.nu indicator-prompt
+
 # For more information on defining custom themes, see
 # https://www.nushell.sh/book/coloring_and_theming.html
 # And here is the theme collection
@@ -168,7 +171,7 @@ $env.config = {
     }
 
     cursor_shape: {
-        emacs: underscore # block, underscore, line, blink_block, blink_underscore, blink_line, inherit to skip setting cursor shape (line is the default)
+        emacs: line # block, underscore, line, blink_block, blink_underscore, blink_line, inherit to skip setting cursor shape (line is the default)
         vi_insert: line # block, underscore, line, blink_block, blink_underscore, blink_line, inherit to skip setting cursor shape (block is the default)
         vi_normal: block # block, underscore, line, blink_block, blink_underscore, blink_line, inherit to skip setting cursor shape (underscore is the default)
     }
@@ -202,7 +205,7 @@ $env.config = {
         {
             name: completion_menu
             only_buffer_difference: false
-            marker: " |  "
+            marker: ( indicator-prompt completion )
             type: {
                 layout: columnar
                 page_size: 10
@@ -219,7 +222,7 @@ $env.config = {
         {
             name: history_menu
             only_buffer_difference: false
-            marker: "   "
+            marker: ( indicator-prompt history )
             type: {
                 layout: list
                 page_size: 10
@@ -233,11 +236,11 @@ $env.config = {
         {
             name: help_menu
             only_buffer_difference: false
-            marker: " 󰋖  "
+            marker: ( indicator-prompt help )
             type: {
                 layout: description
                 columns: 4
-                col_width: 20     # Optional value. If missing all the screen width is used to calculate column width
+                # col_width: 20     # Optional value. If missing all the screen width is used to calculate column width
                 col_padding: 2
                 selection_rows: 4
                 description_rows: 10
@@ -359,10 +362,34 @@ $env.config = {
             }
         }
         {
+            name: move_up
+            modifier: alt
+            keycode: char_k
+            mode: [emacs, vi_insert]
+            event: {
+                until: [
+                    {send: menuup}
+                    {send: up}
+                ]
+            }
+        }
+        {
             name: move_down
             modifier: none
             keycode: down
             mode: [emacs, vi_normal, vi_insert]
+            event: {
+                until: [
+                    {send: menudown}
+                    {send: down}
+                ]
+            }
+        }
+        {
+            name: move_down
+            modifier: alt
+            keycode: char_j
+            mode: [emacs, vi_insert]
             event: {
                 until: [
                     {send: menudown}
@@ -383,10 +410,35 @@ $env.config = {
             }
         }
         {
+            name: move_left
+            modifier: alt
+            keycode: char_h
+            mode: [emacs, vi_insert]
+            event: {
+                until: [
+                    {send: menuleft}
+                    {send: left}
+                ]
+            }
+        }
+        {
             name: move_right_or_take_history_hint
             modifier: none
             keycode: right
             mode: [emacs, vi_normal, vi_insert]
+            event: {
+                until: [
+                    {send: historyhintcomplete}
+                    {send: menuright}
+                    {send: right}
+                ]
+            }
+        }
+        {
+            name: move_right_or_take_history_hint
+            modifier: alt
+            keycode: char_l
+            mode: [emacs, vi_insert]
             event: {
                 until: [
                     {send: historyhintcomplete}
@@ -693,13 +745,13 @@ $env.config = {
             mode: emacs
             event: {edit: uppercaseword}
         }
-        {
-            name: lower_case_word
-            modifier: alt
-            keycode: char_l
-            mode: emacs
-            event: {edit: lowercaseword}
-        }
+        # {
+        #     name: lower_case_word
+        #     modifier: alt
+        #     keycode: char_l
+        #     mode: emacs
+        #     event: {edit: lowercaseword}
+        # }
         {
             name: capitalize_char
             modifier: alt
@@ -722,8 +774,6 @@ use commands.nu *
 # use ~/.cache/starship/init.nu
 # source ~/.config/nushell/.oh-my-posh.nu
 
-# Custom Prompt
-source prompt.nu
 
 # Carapace Completer
 source ~/.cache/carapace/init.nu
