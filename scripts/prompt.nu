@@ -1,7 +1,7 @@
 # let c = $nu.default-config-dir | path join scripts prompt.toml | open
 
 def create-prompt [--transient] {
-    let fill = if $transient { - } else { '∙' }
+    let fill = if $transient { '─' } else { '∙' }
     let left = if $transient { left-prompt --transient } else { left-prompt }
     let right = if $transient { right-prompt --transient } else { right-prompt }
     let len_left = $left | ansi strip | str length -g | $in + (is-ssh | into int)
