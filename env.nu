@@ -42,4 +42,8 @@ export-env {
 
 # Carapace Completer
 mkdir ~/.cache/carapace
-carapace _carapace nushell | save --force ~/.cache/carapace/init.nu
+carapace _carapace nushell | save --force ~/.cache/carapace/init.nu # ($nu.default-config-dir | path join 'scripts/carapace.nu')
+
+# Zoxide -- need to change 'def-env' to 'def --env' and expand '$rest' with '...$rest' in 
+mkdir ~/.cache/zoxide
+zoxide init --cmd cd nushell | save -f ~/.cache/zoxide/init.nu
